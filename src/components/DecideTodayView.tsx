@@ -1,62 +1,67 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Clock, 
-  X, 
   Heart, 
-  RotateCcw, 
-  ExternalLink, 
+  X, 
+  RotateCw, 
   ChefHat, 
-  Star, 
-  Check, 
   Bike, 
   Sparkles, 
-  Utensils, 
-  Lightbulb, 
-  RotateCw, 
-  ChevronLeft, 
-  ChevronRight, 
+  Filter, 
   ChevronDown, 
+  Check, 
+  Volume2, 
+  VolumeX, 
   Zap, 
-  Flame, 
-  Layers, 
-  Filter,
-  ShoppingBag,
-  Cake
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Utensils,
+  Layers,
+  Cake,
+  Clock,
+  RefreshCw,
+  ShoppingBag
 } from 'lucide-react';
-import { MealCardItem, ModalityFilter, FoodCategoryFilter, MealHistoryItem, UserFavoriteMeal, Recipe } from '../types';
+import { 
+  MealCardItem, 
+  ModalityFilter, 
+  FoodCategoryFilter, 
+  MealHistoryItem, 
+  UserFavoriteMeal 
+} from '../types';
 import { 
   getUnifiedCardDataset, 
   triggerHaptic, 
   triggerVictoryConfetti, 
-  isMealFavorited,
-  createFavoriteFromRecipe,
+  isMealFavorited, 
+  createFavoriteFromRecipe, 
   loadDuelThreshold,
-  getDeliverySearchUrl
+  getDeliverySearchUrl 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
 
 interface DecideTodayViewProps {
-  pantry: string[];
   exclusions: string[];
   history: MealHistoryItem[];
   favorites: UserFavoriteMeal[];
+  pantry: string[];
   onAcceptMeal: (mealName: string, type: 'delivery' | 'cooking', emoji: string, details?: string) => void;
-  onAddFavorite: (meal: UserFavoriteMeal) => void;
+  onAddFavorite: (favorite: UserFavoriteMeal) => void;
   onDeleteFavorite: (id: string) => void;
-  onOpenRecipeModal: (recipe: Recipe) => void;
   onOpenBlindMode: () => void;
   onNavigatePantry?: () => void;
 }
 
-// Fixed Modalities (Modalidades Fijas)
+// Modalidades Dropdown Options
 const MODALITIES: { id: ModalityFilter; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Todos los platos', icon: <Sparkles className="w-3.5 h-3.5" /> },
-  { id: 'cooking', label: 'Cocinar en Casa', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
-  { id: 'delivery', label: 'Pedir Delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
+  { id: 'all', label: 'Todos los platos', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
+  { id: 'cooking', label: 'Cocinar en casa', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
+  { id: 'delivery', label: 'Pedir delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
 ];
 
-// Dropdown Categories (Categorías Desplegables)
+// Categorías Dropdown Options
 const CATEGORIES: { id: FoodCategoryFilter; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'Todas las categorías', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
   { id: 'quick', label: 'Rápido (<15 min)', icon: <Clock className="w-3.5 h-3.5 text-blue-500" /> },
@@ -69,419 +74,31 @@ const CATEGORIES: { id: FoodCategoryFilter; label: string; icon: React.ReactNode
   { id: 'cheat', label: 'Antojos', icon: <Flame className="w-3.5 h-3.5 text-purple-500" /> },
 ];
 
-interface CardViewProps {
-  card: MealCardItem;
-  isTop: boolean;
-  isFlipped: boolean;
-  onToggleFlip: () => void;
-  onSwipe: (direction: 'left' | 'right') => void;
-  onToggleFavorite: (card: MealCardItem) => void;
-  isFavorited: boolean;
-  onOpenDelivery: (name: string) => void;
-  exitDirection: 'left' | 'right' | null;
-  pantry: string[];
-  onNavigatePantry?: () => void;
-}
-
-const CardView: React.FC<CardViewProps> = ({
-  card,
-  isTop,
-  isFlipped,
-  onToggleFlip,
-  onSwipe,
-  onToggleFavorite,
-  isFavorited,
-  onOpenDelivery,
-  exitDirection,
-  pantry,
-  onNavigatePantry,
-}) => {
-  const dragX = useMotionValue(0);
-  const cardRotate = useTransform(dragX, [-200, 200], [-12, 12]);
-  const likeOpacity = useTransform(dragX, [30, 90], [0, 1]);
-  const nopeOpacity = useTransform(dragX, [-30, -90], [0, 1]);
-
-  const isCooking = card.type === 'cooking';
-
-  // Pantry matching calculation
-  const recipeIngredients = card.recipe?.allIngredientsFormatted || [];
-  const matchedIngredients = recipeIngredients.filter(ing => 
-    pantry.includes(ing.id) || pantry.includes(ing.name.toLowerCase().trim())
-  );
-  const missingIngredients = recipeIngredients.filter(ing => 
-    !pantry.includes(ing.id) && !pantry.includes(ing.name.toLowerCase().trim())
-  );
-
-  const variants = {
-    initial: isTop 
-      ? { scale: 1, y: 0, opacity: 1 } 
-      : { scale: 0.95, y: 8, opacity: 0.65 },
-    animate: { 
-      scale: 1, 
-      y: 0, 
-      opacity: 1, 
-      transition: { type: 'spring', damping: 24, stiffness: 300 } 
-    },
-    exit: (customDirection: 'left' | 'right' | null) => ({
-      x: customDirection === 'right' ? 400 : -400,
-      opacity: 0,
-      rotate: customDirection === 'right' ? 18 : -18,
-      transition: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
-    }),
-  };
-
-  return (
-    <motion.div
-      custom={exitDirection}
-      variants={variants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      style={isTop ? { x: dragX, rotate: cardRotate, perspective: 1200 } : { perspective: 1200 }}
-      drag={isTop && !isFlipped ? 'x' : false}
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
-      onDragEnd={(_, info) => {
-        if (!isFlipped) {
-          if (info.offset.x > 75 || info.velocity.x > 400) {
-            onSwipe('right');
-          } else if (info.offset.x < -75 || info.velocity.x < -400) {
-            onSwipe('left');
-          }
-        }
-      }}
-      className={`absolute inset-0 w-full h-full select-none ${
-        isTop ? 'z-10' : 'pointer-events-none z-0'
-      }`}
-    >
-      {/* Visual Drag Badges */}
-      {isTop && !isFlipped && (
-        <>
-          <motion.div
-            style={{ opacity: likeOpacity }}
-            className="absolute top-5 right-5 z-30 px-3.5 py-1 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold text-xs tracking-wide pointer-events-none shadow-md flex items-center gap-1"
-          >
-            <span>Me interesa</span>
-            <Check className="w-3.5 h-3.5" />
-          </motion.div>
-
-          <motion.div
-            style={{ opacity: nopeOpacity }}
-            className="absolute top-5 left-5 z-30 px-3.5 py-1 rounded-full bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 font-semibold text-xs tracking-wide pointer-events-none shadow-md flex items-center gap-1"
-          >
-            <X className="w-3.5 h-3.5" />
-            <span>Descartar</span>
-          </motion.div>
-        </>
-      )}
-
-      {/* 3D FLIPPABLE CONTAINER */}
-      <motion.div
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-        style={{ transformStyle: 'preserve-3d' }}
-        className="w-full h-full relative"
-      >
-        {/* ================= FRONT FACE ================= */}
-        <div
-          onClick={onToggleFlip}
-          style={{ 
-            backfaceVisibility: 'hidden', 
-            WebkitBackfaceVisibility: 'hidden', 
-            transform: 'rotateY(0deg)' 
-          }}
-          className="apple-card bg-white dark:bg-zinc-900 absolute inset-0 w-full h-full p-6 sm:p-7 flex flex-col justify-between overflow-hidden cursor-pointer shadow-lg border border-black/[0.08] dark:border-white/[0.08]"
-        >
-          {/* Top Header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className={`text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-xs ${
-                isCooking 
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20' 
-                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
-              }`}>
-                {isCooking ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
-                <span>{isCooking ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
-              </span>
-
-              <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full">
-                <Clock className="w-3 h-3" />
-                {card.timeEstimate}
-              </span>
-            </div>
-
-            <button
-              id="btn-card-star"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(card);
-              }}
-              className="p-2 rounded-full text-zinc-400 hover:text-amber-500 transition-colors btn-press cursor-pointer"
-              title="Guardar en favoritos"
-            >
-              <Star className={`w-4 h-4 ${isFavorited ? 'fill-amber-400 text-amber-400' : ''}`} />
-            </button>
-          </div>
-
-          {/* Central Visual: Dish Hero */}
-          <div className="flex flex-col items-center text-center space-y-3 my-auto py-2 group">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-5xl sm:text-6xl shadow-xs group-hover:scale-105 transition-transform">
-              {card.imageEmoji}
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
-                {card.name}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {isCooking 
-                  ? `${card.categoryLabel} • ${card.caloriesApprox || 'Casero'}`
-                  : `${card.deliveryOption?.tags[0] || 'Delivery'} • ${card.caloriesApprox || 'Listo para pedir'}`}
-              </p>
-            </div>
-
-            {/* Hint to Flip */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-medium shadow-2xs group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors">
-              <RotateCw className="w-3.5 h-3.5 text-zinc-500" />
-              <span>Toca en cualquier parte para girar</span>
-            </div>
-          </div>
-
-          {/* Footer Info */}
-          <div className="space-y-2 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-            <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="font-semibold">
-                {isCooking ? 'Ingredientes clave:' : 'Ingredientes principales:'}
-              </span>
-
-              <span className="text-zinc-900 dark:text-zinc-100 font-semibold hover:underline flex items-center gap-1">
-                <span>{isCooking ? 'Ver Receta' : 'Ver Detalles'}</span>
-                <RotateCw className="w-3 h-3" />
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {card.ingredientsSummary.slice(0, 4).map((ing, idx) => (
-                <span
-                  key={idx}
-                  className="text-[11px] px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium"
-                >
-                  {ing}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* ================= BACK FACE (RECIPE & PANTRY DETAILS) ================= */}
-        <div
-          onClick={onToggleFlip}
-          style={{ 
-            backfaceVisibility: 'hidden', 
-            WebkitBackfaceVisibility: 'hidden', 
-            transform: 'rotateY(180deg)' 
-          }}
-          className="apple-card bg-white dark:bg-zinc-900 absolute inset-0 w-full h-full p-6 sm:p-7 flex flex-col justify-between overflow-y-auto scrollbar-none cursor-pointer shadow-lg border border-black/[0.08] dark:border-white/[0.08]"
-        >
-          {/* Back Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{card.imageEmoji}</span>
-              <div>
-                <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
-                  {card.name}
-                </h4>
-                <p className="text-[11px] text-zinc-500 font-medium">
-                  {isCooking ? `Receta Casera • ${card.timeEstimate}` : `Delivery • ${card.timeEstimate}`}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                sound.playClick(600);
-                onToggleFlip();
-              }}
-              className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 btn-press cursor-pointer flex items-center gap-1 text-xs font-semibold"
-              title="Volver a la portada"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="text-[10px]">Volver</span>
-            </button>
-          </div>
-
-          {/* Recipe Steps & Smart Pantry Connection */}
-          <div className="py-3 space-y-3 flex-1 overflow-y-auto scrollbar-none">
-            {isCooking && card.recipe ? (
-              <div className="space-y-3">
-                {/* Despensa Inteligente Connection Module */}
-                <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] uppercase font-bold text-zinc-500 tracking-wider flex items-center gap-1.5">
-                      <ShoppingBag className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />
-                      <span>Despensa Inteligente:</span>
-                    </span>
-                    <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                      {matchedIngredients.length}/{recipeIngredients.length} en stock
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {recipeIngredients.map((ing, idx) => {
-                      const hasIt = pantry.includes(ing.id) || pantry.includes(ing.name.toLowerCase().trim());
-                      return (
-                        <span
-                          key={idx}
-                          className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${
-                            hasIt
-                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-500/20'
-                              : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-500/20'
-                          }`}
-                        >
-                          <span>{hasIt ? '✓' : '⚠️'}</span>
-                          <span>{ing.name}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  {onNavigatePantry && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        sound.playClick(750);
-                        onNavigatePantry();
-                      }}
-                      className="w-full mt-1 py-1.5 px-3 rounded-xl bg-zinc-200/80 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center justify-center gap-1.5 btn-press cursor-pointer"
-                    >
-                      <ShoppingBag className="w-3 h-3" />
-                      <span>Ver mi Despensa Completa</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* 3 Steps */}
-                <div className="space-y-2">
-                  <h5 className="text-xs uppercase font-semibold text-zinc-500 tracking-wider">
-                    Preparación en 3 Pasos:
-                  </h5>
-                  {card.recipe.steps.map((step, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] flex items-start gap-2.5 text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                        {idx + 1}
-                      </span>
-                      <p>{step}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Chef Tip */}
-                {card.recipe.chefTip && (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2 text-xs text-amber-900 dark:text-amber-200">
-                    <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <p>
-                      <strong className="font-semibold">Tip: </strong>
-                      <span className="italic">"{card.recipe.chefTip}"</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Delivery Info */
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] space-y-1.5">
-                  <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                    Descripción del Plato
-                  </span>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    {card.description}
-                  </p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                    Ingredientes del plato:
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {card.ingredientsSummary.map((ing, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px]"
-                      >
-                        {ing}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Back Footer Action */}
-          <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.06] shrink-0">
-            {isCooking ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sound.playClick(600);
-                  onToggleFlip();
-                }}
-                className="w-full py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs btn-press cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <Check className="w-4 h-4" />
-                <span>Volver a la portada del plato</span>
-              </button>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenDelivery(card.name);
-                }}
-                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs btn-press cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <Bike className="w-4 h-4" />
-                <span>Buscar en Apps de Delivery</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
-  pantry,
   exclusions,
   history,
   favorites,
+  pantry,
   onAcceptMeal,
   onAddFavorite,
   onDeleteFavorite,
   onOpenBlindMode,
   onNavigatePantry,
 }) => {
-  // Fixed Modality: 'all' | 'cooking' | 'delivery'
+  // Dropdown States
   const [selectedModality, setSelectedModality] = useState<ModalityFilter>('all');
-  
-  // Dropdown Category: 'all' | 'quick' | 'meat' | ... | 'desserts' | 'cheat'
   const [selectedCategory, setSelectedCategory] = useState<FoodCategoryFilter>('all');
+  const [isModalityOpen, setIsModalityOpen] = useState<boolean>(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
+  const modalityDropdownRef = useRef<HTMLDivElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Deck & Navigation State
   const [cardDeck, setCardDeck] = useState<MealCardItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [likedCards, setLikedCards] = useState<MealCardItem[]>([]);
-  const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
-  const [duelThreshold, setDuelThreshold] = useState<number>(2);
-
-  // Dropdown UI state
-  const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [duelThreshold, setDuelThreshold] = useState<number>(5);
 
   // Sorteo / Duel State
   const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
@@ -494,10 +111,13 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     setDuelThreshold(loadDuelThreshold());
   }, []);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (modalityDropdownRef.current && !modalityDropdownRef.current.contains(event.target as Node)) {
+        setIsModalityOpen(false);
+      }
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
         setIsCategoryOpen(false);
       }
     };
@@ -505,16 +125,24 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const deck = getUnifiedCardDataset(selectedModality, selectedCategory, exclusions, history, favorites);
-    setCardDeck(deck);
+  // Load 20 Random Meals Batch
+  const loadRandomBatch = (resetLikes: boolean = false) => {
+    const fullDataset = getUnifiedCardDataset(selectedModality, selectedCategory, exclusions, history, favorites);
+    const shuffled = [...fullDataset].sort(() => Math.random() - 0.5);
+    const batch20 = shuffled.slice(0, 20);
+    setCardDeck(batch20);
     setCurrentIndex(0);
-    setExitDirection(null);
     setIsFlipped(false);
+    if (resetLikes) {
+      setLikedCards([]);
+    }
+  };
+
+  useEffect(() => {
+    loadRandomBatch(true);
   }, [selectedModality, selectedCategory, exclusions, history, favorites.length]);
 
   const currentCard = currentIndex < cardDeck.length ? cardDeck[currentIndex] : null;
-  const nextCard = currentIndex + 1 < cardDeck.length ? cardDeck[currentIndex + 1] : null;
 
   const handleToggleFlip = () => {
     sound.playClick(850);
@@ -522,36 +150,63 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     setIsFlipped(prev => !prev);
   };
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    if (!currentCard) return;
-
-    setExitDirection(direction);
-    setIsFlipped(false);
-
-    if (direction === 'right') {
-      sound.playClick(950);
-      triggerHaptic('success');
-      const updatedLikes = [...likedCards, currentCard];
-      setLikedCards(updatedLikes);
-
-      const targetThreshold = loadDuelThreshold();
-      if (updatedLikes.length >= targetThreshold) {
-        setIsDuelActive(true);
-        setIsPreparingRaffle(true);
-        sound.playClick(900);
-        triggerHaptic('medium');
-
-        setTimeout(() => {
-          setIsPreparingRaffle(false);
-          startRaffle(updatedLikes);
-        }, 1500);
-      }
-    } else {
-      sound.playTick(450);
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      sound.playClick(650);
       triggerHaptic('light');
+      setIsFlipped(false);
+      setCurrentIndex(prev => prev - 1);
     }
+  };
 
-    setCurrentIndex(prev => prev + 1);
+  const handleNext = () => {
+    setIsFlipped(false);
+    if (currentIndex + 1 < cardDeck.length) {
+      sound.playClick(750);
+      triggerHaptic('light');
+      setCurrentIndex(prev => prev + 1);
+    } else {
+      // End of 20 batch: load next batch of 20
+      sound.playSuccess();
+      triggerHaptic('medium');
+      loadRandomBatch(false);
+    }
+  };
+
+  const handleReject = () => {
+    if (!currentCard) return;
+    sound.playTick(450);
+    triggerHaptic('light');
+    // If it was previously liked, remove it
+    setLikedCards(prev => prev.filter(c => c.id !== currentCard.id));
+    handleNext();
+  };
+
+  const handleLike = () => {
+    if (!currentCard) return;
+    sound.playClick(950);
+    triggerHaptic('success');
+
+    // Add to likedCards if not already present
+    const isAlreadyLiked = likedCards.some(c => c.id === currentCard.id);
+    const updatedLikes = isAlreadyLiked ? likedCards : [...likedCards, currentCard];
+    setLikedCards(updatedLikes);
+
+    const threshold = loadDuelThreshold();
+    if (updatedLikes.length >= threshold) {
+      // Trigger Sorteo Final with 2-second preparation
+      setIsDuelActive(true);
+      setIsPreparingRaffle(true);
+      sound.playClick(900);
+      triggerHaptic('medium');
+
+      setTimeout(() => {
+        setIsPreparingRaffle(false);
+        startRaffle(updatedLikes);
+      }, 2000); // Strict 2 seconds wait
+    } else {
+      handleNext();
+    }
   };
 
   const startRaffle = (candidates: MealCardItem[]) => {
@@ -561,7 +216,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     triggerHaptic('medium');
 
     let counter = 0;
-    const totalFlips = 16;
+    const totalFlips = 18;
     const intervalTime = 85;
 
     if (duelTimerRef.current) clearInterval(duelTimerRef.current);
@@ -570,7 +225,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       counter++;
       const pick = candidates[counter % candidates.length];
       setDuelWinner(pick);
-      sound.playTick(600 + (counter * 25));
+      sound.playTick(600 + (counter * 20));
       triggerHaptic('light');
 
       if (counter >= totalFlips) {
@@ -591,15 +246,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     };
   }, []);
 
-  const handleResetDeck = () => {
-    sound.playClick(700);
-    triggerHaptic('medium');
-    const deck = getUnifiedCardDataset(selectedModality, selectedCategory, exclusions, history, favorites);
-    setCardDeck(deck);
-    setCurrentIndex(0);
-    setLikedCards([]);
-    setExitDirection(null);
-    setIsFlipped(false);
+  const handleOpenDelivery = (dishName: string) => {
+    sound.playClick(850);
+    const url = getDeliverySearchUrl(dishName);
+    window.open(url, '_blank');
   };
 
   const handleToggleFavorite = (card: MealCardItem) => {
@@ -635,101 +285,134 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     }
   };
 
-  const handleOpenDelivery = (dishName: string) => {
-    sound.playClick(800);
-    const url = getDeliverySearchUrl(dishName);
-    window.open(url, '_blank');
-  };
+  const isFavorited = currentCard ? isMealFavorited(currentCard.name, favorites) : false;
+  const isCurrentlyLiked = currentCard ? likedCards.some(c => c.id === currentCard.id) : false;
 
-  const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Categorías';
+  const currentModalityLabel = MODALITIES.find(m => m.id === selectedModality)?.label || 'Todos los platos';
+  const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
 
   return (
-    <div className="w-full flex flex-col gap-4 max-w-md mx-auto pb-12">
-      {/* TOP HEADER: ¿QUÉ COMEMOS HOY? & BOTÓN ¡TENGO HAMBRE! */}
-      <div className="flex items-center justify-between gap-3 pt-1 pb-1">
+    <div className="w-full max-w-md mx-auto space-y-4 pb-20 select-none">
+      {/* TOP BAR: Title & Tengo Hambre */}
+      <div className="flex items-center justify-between gap-3 pt-1">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            ¿QUÉ COMEMOS HOY?
+          <h2 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-1.5">
+            <span>¿QUÉ COMEMOS hoy?</span>
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Desliza o presiona las flechas para elegir tu plato
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+            20 platos al azar • Elige tus preferidos para el sorteo
           </p>
         </div>
 
         <button
-          id="btn-main-blind-mode"
           onClick={() => {
             sound.playClick(1000);
             onOpenBlindMode();
           }}
-          className="px-3.5 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0"
-          title="Decisión Inmediata: ¡Tengo Hambre!"
+          className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer shrink-0"
         >
-          <Zap className="w-3.5 h-3.5 fill-current text-amber-400" />
+          <Zap className="w-3.5 h-3.5 fill-current" />
           <span>¡Tengo Hambre!</span>
         </button>
       </div>
 
-      {/* FILTER CONTROLS (MODALITY FIXED ON TOP, CATEGORY DROPDOWN DIRECTLY UNDERNEATH) */}
-      <div className="space-y-2 p-3 rounded-2xl bg-zinc-100/70 dark:bg-zinc-900/70 border border-black/[0.04] dark:border-white/[0.06] relative z-20">
-        {/* Row 1: Fixed Modality Selector */}
-        <div className="flex items-center gap-1.5">
-          {MODALITIES.map(mod => {
-            const isSelected = selectedModality === mod.id;
-            return (
-              <button
-                key={mod.id}
-                id={`btn-modality-${mod.id}`}
-                onClick={() => {
-                  sound.playClick(isSelected ? 600 : 800);
-                  setSelectedModality(mod.id);
-                  triggerHaptic('light');
-                }}
-                className={`flex-1 py-2 px-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 btn-press cursor-pointer border ${
-                  isSelected
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
-                    : 'bg-white dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
-                }`}
+      {/* DUAL DROPDOWNS: Modalidad & Categoría */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Dropdown 1: Modalidades */}
+        <div ref={modalityDropdownRef} className="relative">
+          <button
+            onClick={() => {
+              sound.playClick(750);
+              setIsModalityOpen(prev => !prev);
+              setIsCategoryOpen(false);
+            }}
+            className={`w-full py-2 px-3 rounded-2xl text-xs font-medium border flex items-center justify-between transition-all shadow-2xs btn-press cursor-pointer ${
+              selectedModality !== 'all'
+                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent font-semibold'
+                : 'bg-white dark:bg-zinc-950 border-black/[0.08] dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 truncate">
+              {MODALITIES.find(m => m.id === selectedModality)?.icon}
+              <span className="truncate">{currentModalityLabel}</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isModalityOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {isModalityOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 4, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 right-0 top-full mt-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl z-50 space-y-0.5"
               >
-                {mod.icon}
-                <span className="truncate">{mod.label}</span>
-              </button>
-            );
-          })}
+                <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">
+                  Modalidad
+                </div>
+                {MODALITIES.map(mod => {
+                  const isSelected = selectedModality === mod.id;
+                  return (
+                    <button
+                      key={mod.id}
+                      onClick={() => {
+                        sound.playClick(isSelected ? 600 : 850);
+                        setSelectedModality(mod.id);
+                        setIsModalityOpen(false);
+                        triggerHaptic('light');
+                      }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors btn-press cursor-pointer ${
+                        isSelected
+                          ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold'
+                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {mod.icon}
+                        <span>{mod.label}</span>
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Row 2: Categories Dropdown directly underneath */}
-        <div ref={dropdownRef} className="relative w-full">
+        {/* Dropdown 2: Categorías */}
+        <div ref={categoryDropdownRef} className="relative">
           <button
             onClick={() => {
               sound.playClick(750);
               setIsCategoryOpen(prev => !prev);
+              setIsModalityOpen(false);
             }}
-            className={`w-full py-2 px-3.5 rounded-xl text-xs font-medium border flex items-center justify-between transition-all shadow-xs btn-press cursor-pointer ${
+            className={`w-full py-2 px-3 rounded-2xl text-xs font-medium border flex items-center justify-between transition-all shadow-2xs btn-press cursor-pointer ${
               selectedCategory !== 'all'
                 ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent font-semibold'
                 : 'bg-white dark:bg-zinc-950 border-black/[0.08] dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 truncate">
               <Filter className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="font-semibold">{currentCategoryLabel}</span>
+              <span className="truncate">{currentCategoryLabel}</span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Floating Dropdown Popover */}
           <AnimatePresence>
             {isCategoryOpen && (
               <motion.div
                 initial={{ opacity: 0, y: 6, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.96 }}
-                transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.15 }}
                 className="absolute left-0 right-0 top-full mt-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl z-50 space-y-0.5"
               >
                 <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">
-                  Filtrar por Categoría
+                  Categoría
                 </div>
                 {CATEGORIES.map(cat => {
                   const isCatSelected = selectedCategory === cat.id;
@@ -762,156 +445,248 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         </div>
       </div>
 
-      {/* Progress Counter & Sorteo Threshold Notice */}
-      <div className="flex items-center justify-between px-1 text-xs">
-        <span className="text-zinc-600 dark:text-zinc-400 font-medium">
-          Sorteo: {likedCards.length}/{duelThreshold} opciones seleccionadas
-        </span>
-
-        {likedCards.length > 0 && likedCards.length < duelThreshold && (
-          <span className="text-zinc-900 dark:text-zinc-100 font-semibold animate-pulse">
-            Elige {duelThreshold - likedCards.length} más para sortear
+      {/* PROGRESS TRACKER */}
+      <div className="apple-card p-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+            Plato {cardDeck.length > 0 ? currentIndex + 1 : 0} de {cardDeck.length}
           </span>
-        )}
+          <span className="text-[11px] text-zinc-400">
+            ({likedCards.length} elegidos)
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <span>Sorteo: {likedCards.length}/{duelThreshold}</span>
+        </div>
       </div>
 
-      {/* SWIPEABLE CARD CONTAINER WITH FLOATING LATERAL ARROWS (STRICT FIXED HEIGHT) */}
-      <div className="relative w-full h-[460px] min-h-[460px] max-h-[460px] flex items-center justify-center z-10 overflow-hidden">
-        {/* Floating Lateral Navigation Arrows */}
-        {currentCard && (
-          <>
-            <button
-              onClick={() => handleSwipe('left')}
-              className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] text-zinc-600 dark:text-zinc-300 hover:text-red-500 dark:hover:text-red-400 hover:scale-110 shadow-md flex items-center justify-center btn-press cursor-pointer transition-all"
-              title="Descartar plato (Deslizar izquierda)"
+      {/* CENTRAL DISH CARD WITH LATERAL ARROWS */}
+      <div className="relative w-full h-[460px] min-h-[460px] max-h-[460px] flex items-center justify-center overflow-hidden">
+        {/* Previous Arrow Button */}
+        <button
+          onClick={handlePrev}
+          disabled={currentIndex === 0}
+          className="absolute left-2 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
+          title="Plato anterior"
+        >
+          <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        {/* Next Arrow Button */}
+        <button
+          onClick={handleNext}
+          className="absolute right-2 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
+          title="Siguiente plato"
+        >
+          <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        {/* The Card */}
+        {currentCard ? (
+          <div 
+            onClick={handleToggleFlip}
+            className="w-full h-full cursor-pointer [perspective:1000px]"
+          >
+            <motion.div
+              animate={{ rotateY: isFlipped ? 180 : 0 }}
+              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              className="relative w-full h-full [transform-style:preserve-3d]"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+              {/* FRONT FACE (PORTADA) */}
+              <div 
+                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
+                style={{ WebkitBackfaceVisibility: 'hidden' }}
+              >
+                {/* Top Badge & Favorite Button */}
+                <div className="flex items-center justify-between">
+                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 ${
+                    currentCard.type === 'cooking'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+                  }`}>
+                    {currentCard.type === 'cooking' ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
+                    <span>{currentCard.type === 'cooking' ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
+                  </span>
 
-            <button
-              onClick={() => handleSwipe('right')}
-              className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-white/95 dark:bg-zinc-800/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] text-zinc-600 dark:text-zinc-300 hover:text-emerald-500 dark:hover:text-emerald-400 hover:scale-110 shadow-md flex items-center justify-center btn-press cursor-pointer transition-all"
-              title="Me interesa (Deslizar derecha)"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleFavorite(currentCard);
+                    }}
+                    className={`p-2 rounded-full border transition-all btn-press ${
+                      isFavorited
+                        ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-500/30 text-rose-500 shadow-xs'
+                        : 'bg-zinc-50 dark:bg-zinc-800 border-black/[0.06] dark:border-white/[0.08] text-zinc-400 hover:text-zinc-600'
+                    }`}
+                  >
+                    <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
 
-        {/* Next Card behind (COMPLETELY HIDDEN while active card is flipped to prevent show-through) */}
-        {nextCard && !isFlipped && (
-          <CardView
-            key={nextCard.id}
-            card={nextCard}
-            isTop={false}
-            isFlipped={false}
-            onToggleFlip={() => {}}
-            onSwipe={handleSwipe}
-            onToggleFavorite={handleToggleFavorite}
-            isFavorited={isMealFavorited(nextCard.name, favorites)}
-            onOpenDelivery={handleOpenDelivery}
-            exitDirection={null}
-            pantry={pantry}
-            onNavigatePantry={onNavigatePantry}
-          />
-        )}
+                {/* Main Emoji & Title */}
+                <div className="text-center space-y-3 py-2">
+                  <div className="w-24 h-24 rounded-3xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-6xl mx-auto shadow-xs">
+                    {currentCard.imageEmoji}
+                  </div>
 
-        <AnimatePresence mode="popLayout" custom={exitDirection}>
-          {currentCard ? (
-            <CardView
-              key={currentCard.id}
-              card={currentCard}
-              isTop={true}
-              isFlipped={isFlipped}
-              onToggleFlip={handleToggleFlip}
-              onSwipe={handleSwipe}
-              onToggleFavorite={handleToggleFavorite}
-              isFavorited={isMealFavorited(currentCard.name, favorites)}
-              onOpenDelivery={handleOpenDelivery}
-              exitDirection={exitDirection}
-              pantry={pantry}
-              onNavigatePantry={onNavigatePantry}
-            />
-          ) : (
-            <div className="apple-card w-full h-full p-8 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                  Has visto todas las opciones
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {likedCards.length > 0
-                    ? `Guardaste ${likedCards.length} opciones en tus tentaciones.`
-                    : 'Vuelve a barajar o prueba con otro filtro.'}
+                  <div className="space-y-1">
+                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight px-4">
+                      {currentCard.name}
+                    </h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                      {currentCard.categoryLabel} • {currentCard.timeEstimate}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tags / Ingredients Preview */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {currentCard.tags.slice(0, 4).map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <p className="text-center text-[11px] text-zinc-400 font-medium italic">
+                    Toca la tarjeta para ver la receta / detalles 🔄
+                  </p>
+                </div>
+              </div>
+
+              {/* BACK FACE (RECETA / DETALLES) */}
+              <div 
+                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-xl flex flex-col justify-between overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                style={{ WebkitBackfaceVisibility: 'hidden' }}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <span>{currentCard.imageEmoji}</span>
+                      <span>{currentCard.name}</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400 uppercase font-semibold">
+                      Receta & Ingredientes
+                    </span>
+                  </div>
+
+                  {/* Cooking Steps or Delivery Description */}
+                  {currentCard.recipe ? (
+                    <div className="space-y-2">
+                      <div className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                        {currentCard.recipe.steps.map((step, idx) => (
+                          <div key={idx} className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 flex items-start gap-2">
+                            <span className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <p className="leading-snug">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Smart Pantry Matcher */}
+                      {pantry.length > 0 && (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                          <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                            <ShoppingBag className="w-3 h-3" />
+                            <span>Despensa Inteligente</span>
+                          </span>
+                          <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                            Ingredientes: {currentCard.recipe.allIngredientsFormatted.map(i => i.name).join(', ')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pt-2">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        {currentCard.description}
+                      </p>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDelivery(currentCard.name);
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Bike className="w-3.5 h-3.5" />
+                        <span>Buscar en App de Delivery</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-center text-[10px] text-zinc-400 font-medium italic pt-2">
+                  Toca para volver a la portada
                 </p>
               </div>
-
-              <div className="flex items-center gap-2.5 pt-2">
-                <button
-                  onClick={handleResetDeck}
-                  className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center gap-1.5 btn-press cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Barajar de nuevo</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    sound.playClick(900);
-                    onOpenBlindMode();
-                  }}
-                  className="px-4 py-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-medium text-xs btn-press cursor-pointer"
-                >
-                  <span>¡Tengo Hambre!</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </AnimatePresence>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="apple-card p-10 text-center space-y-3">
+            <Utensils className="w-8 h-8 text-zinc-400 mx-auto" />
+            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+              No hay más platos en esta categoría
+            </p>
+            <button
+              onClick={() => loadRandomBatch(true)}
+              className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold"
+            >
+              Cargar nuevos 20 platos
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ACTION BUTTONS (RIGID UNMOVABLE FOOTER) */}
-      {currentCard && (
-        <div className="pt-2 flex items-center justify-center gap-3 shrink-0 h-14">
-          {/* Reject Button */}
-          <button
-            id="btn-swipe-nope"
-            onClick={() => handleSwipe('left')}
-            className="flex-1 h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] text-zinc-700 dark:text-zinc-300 hover:text-red-600 dark:hover:text-red-400 flex items-center justify-center gap-2 shadow-xs btn-press cursor-pointer font-semibold text-xs transition-colors"
-            title="Descartar plato"
-          >
-            <X className="w-4 h-4 stroke-[2]" />
-            <span>Descartar</span>
-          </button>
+      {/* BOTTOM ACTION BAR (RECHAZAR, FLIP, ME INTERESA) */}
+      <div className="flex items-center gap-2.5 pt-1">
+        {/* Reject Button */}
+        <button
+          onClick={handleReject}
+          className="flex-1 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 hover:text-red-500 dark:hover:bg-zinc-700 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer border border-black/[0.06] dark:border-white/[0.08]"
+          title="Descartar este plato y avanzar"
+        >
+          <X className="w-4 h-4 stroke-[2.5]" />
+          <span>Rechazar</span>
+        </button>
 
-          {/* Flip Card / Recipe Button (FIXED WIDTH TO PREVENT SHIFT) */}
-          <button
-            id="btn-swipe-flip"
-            onClick={handleToggleFlip}
-            className={`w-32 h-12 rounded-2xl border flex items-center justify-center gap-1.5 shadow-xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
-              isFlipped
-                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent'
-                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
-            }`}
-            title="Dar vuelta la tarjeta para ver la receta"
-          >
-            <RotateCw className="w-4 h-4 stroke-[2]" />
-            <span>{isFlipped ? 'Ver Portada' : 'Ver Receta'}</span>
-          </button>
+        {/* Flip Card Button */}
+        <button
+          onClick={handleToggleFlip}
+          className={`px-4 h-12 rounded-2xl border flex items-center justify-center gap-1.5 shadow-xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
+            isFlipped
+              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent'
+              : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
+          }`}
+          title="Ver receta / portada"
+        >
+          <RotateCw className="w-4 h-4 stroke-[2]" />
+          <span>{isFlipped ? 'Portada' : 'Receta'}</span>
+        </button>
 
-          {/* Like Button */}
-          <button
-            id="btn-swipe-like"
-            onClick={() => handleSwipe('right')}
-            className="flex-1 h-12 px-4 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center gap-2 shadow-sm btn-press cursor-pointer font-semibold text-xs transition-colors"
-            title="Elegir opción para el sorteo"
-          >
-            <Heart className="w-4 h-4 fill-current stroke-[2]" />
-            <span>Me interesa</span>
-          </button>
-        </div>
-      )}
+        {/* Like Button */}
+        <button
+          onClick={handleLike}
+          className={`flex-1 h-12 rounded-2xl text-white dark:text-zinc-900 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer shadow-sm ${
+            isCurrentlyLiked
+              ? 'bg-emerald-600 dark:bg-emerald-400 text-white dark:text-zinc-950 font-bold'
+              : 'bg-zinc-900 dark:bg-white'
+          }`}
+          title="Marcar como 'Me interesa' para el sorteo final"
+        >
+          <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
+          <span>{isCurrentlyLiked ? '¡Me interesa!' : 'Me interesa'}</span>
+        </button>
+      </div>
 
-      {/* FINAL RAFFLE / DUEL MODAL */}
+      {/* FINAL RAFFLE MODAL (WITH 2-SECOND PREPARATION) */}
       <AnimatePresence>
         {isDuelActive && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
@@ -935,6 +710,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 <X className="w-4 h-4" />
               </button>
 
+              {/* 2-SECOND SKELETON / PREPARING STATE */}
               {isPreparingRaffle ? (
                 <div className="py-4 space-y-4 flex flex-col items-center justify-center">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
@@ -1003,7 +779,6 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                     <div className="space-y-2 pt-1">
                       {duelWinner.type === 'delivery' ? (
                         <button
-                          id="btn-duel-delivery"
                           onClick={() => handleOpenDelivery(duelWinner.name)}
                           className="w-full py-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold text-xs flex items-center justify-center gap-1.5 btn-press cursor-pointer"
                         >

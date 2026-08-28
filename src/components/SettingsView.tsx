@@ -56,7 +56,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [customInput, setCustomInput] = useState('');
   const [showClearSuccess, setShowClearSuccess] = useState(false);
-  const [duelThreshold, setDuelThreshold] = useState<number>(10);
+  const [duelThreshold, setDuelThreshold] = useState<number>(5);
   const [defaultDeliveryApp, setDefaultDeliveryApp] = useState<DeliveryApp>('pedidosya');
 
   useEffect(() => {
