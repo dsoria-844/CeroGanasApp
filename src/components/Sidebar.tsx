@@ -15,7 +15,8 @@ import {
   VolumeX, 
   ChevronRight,
   Plus,
-  Utensils
+  Utensils,
+  HelpCircle
 } from 'lucide-react';
 import { AppTab, MealHistoryItem } from '../types';
 import { Theme } from '../utils/theme';
@@ -29,6 +30,7 @@ interface SidebarProps {
   onChangeTab: (tab: AppTab) => void;
   onOpenHistory: () => void;
   onOpenBlindMode: () => void;
+  onOpenHelp: () => void;
   history: MealHistoryItem[];
   exclusionsCount: number;
   favoritesCount: number;
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onChangeTab,
   onOpenBlindMode,
+  onOpenHelp,
   history,
   exclusionsCount,
   favoritesCount,
@@ -194,10 +197,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 })}
               </div>
 
-              {/* Quick Actions Section */}
+              {/* Quick Actions & Help Section */}
               <div className="space-y-1 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
                 <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-3 pb-1">
-                  Acción Inmediata
+                  Acciones & Guía
                 </p>
 
                 {/* Tengo Hambre Button */}
@@ -212,6 +215,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex items-center gap-2.5">
                     <Zap className="w-4 h-4 text-amber-500 fill-current" />
                     <span>¡Tengo Hambre!</span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                </button>
+
+                {/* Ayuda / Onboarding Button */}
+                <button
+                  id="btn-sidebar-help"
+                  onClick={() => {
+                    sound.playClick(850);
+                    onOpenHelp();
+                    onClose();
+                  }}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <HelpCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Ayuda (Cómo funciona)</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                 </button>

@@ -9,6 +9,7 @@ import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { CreateMealView } from './components/CreateMealView';
 import { BlindModeModal } from './components/BlindModeModal';
+import { OnboardingModal } from './components/OnboardingModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
 import { FavoritesModal } from './components/FavoritesModal';
@@ -41,6 +42,7 @@ export default function App() {
   const [remainingRerolls, setRemainingRerolls] = useState<number>(3);
   
   // Modals
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(true);
   const [isBlindModeOpen, setIsBlindModeOpen] = useState(false);
   const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -122,6 +124,7 @@ export default function App() {
         onChangeTab={tab => setActiveTab(tab)}
         onOpenHistory={() => setActiveTab('history')}
         onOpenBlindMode={() => setIsBlindModeOpen(true)}
+        onOpenHelp={() => setIsOnboardingOpen(true)}
         history={history}
         exclusionsCount={exclusions.length}
         favoritesCount={favorites.length}
@@ -331,6 +334,12 @@ export default function App() {
         onClose={() => setIsExclusionsOpen(false)}
         exclusions={exclusions}
         onUpdateExclusions={updated => setExclusions(updated)}
+      />
+
+      {/* Onboarding Interactive Guide Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
       />
     </div>
   );
