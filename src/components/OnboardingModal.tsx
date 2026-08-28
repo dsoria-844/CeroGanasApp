@@ -117,17 +117,21 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none touch-none overscroll-none"
+        style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-          className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl text-center space-y-5"
+          className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+          style={{ touchAction: 'none', overscrollBehavior: 'none' }}
         >
           {/* Sloth Background Pattern */}
           <div 
-            className="absolute inset-0 bg-cover bg-center opacity-[0.10] dark:opacity-[0.05] pointer-events-none"
+            className="absolute inset-0 bg-cover bg-center opacity-[0.09] dark:opacity-[0.045] pointer-events-none"
             style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
           />
 
@@ -150,11 +154,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           <AnimatePresence mode="wait">
             <motion.div
               key={currentSlide}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-              className="space-y-4 pt-2 relative z-10"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+              className="space-y-3 pt-1 relative z-10"
             >
               {/* Header Badge */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
@@ -163,7 +167,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
 
               {/* Illustration Image */}
-              <div className="relative w-36 h-36 sm:w-40 sm:h-40 mx-auto rounded-3xl overflow-hidden shadow-xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800">
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 mx-auto rounded-3xl overflow-hidden shadow-xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800">
                 <img
                   src={slide.image}
                   alt={slide.title}
@@ -172,20 +176,20 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
               </div>
 
               {/* Title & Description */}
-              <div className="space-y-1.5 px-2">
-                <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+              <div className="space-y-1 px-2">
+                <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
                   {slide.title}
                 </h3>
                 <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
                   {slide.subtitle}
                 </p>
-                <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed pt-1">
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
                   {slide.description}
                 </p>
               </div>
 
               {/* Highlights list */}
-              <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] text-left space-y-2">
+              <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] text-left space-y-1.5">
                 {slide.highlights.map((highlight, idx) => (
                   <div key={idx} className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
