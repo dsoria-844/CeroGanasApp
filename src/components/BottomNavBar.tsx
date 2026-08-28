@@ -1,6 +1,8 @@
 import React from 'react';
-import { Compass, Calendar, ShoppingBag, Star, Flame, Sparkles } from 'lucide-react';
+import { Calendar, ShoppingBag, Star, Sparkles, Bike } from 'lucide-react';
+import { motion } from 'motion/react';
 import { AppTab } from '../types';
+import { sound } from '../utils/audio';
 import { triggerHaptic } from '../utils/storage';
 
 interface BottomNavBarProps {
@@ -17,30 +19,33 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   const tabs: { id: AppTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'decide',
-      label: 'Decidir Hoy',
-      icon: <Sparkles className="w-5 h-5" />,
-    },
-    {
-      id: 'weekly',
-      label: 'Plan Semanal',
-      icon: <Calendar className="w-5 h-5" />,
+      label: 'Decidir',
+      icon: <Sparkles className="w-4 h-4" />,
     },
     {
       id: 'pantry',
       label: 'Despensa',
-      icon: <ShoppingBag className="w-5 h-5" />,
+      icon: <ShoppingBag className="w-4 h-4" />,
+    },
+    {
+      id: 'weekly',
+      label: 'Semanal',
+      icon: <Calendar className="w-4 h-4" />,
     },
     {
       id: 'favorites',
       label: 'Favoritos',
-      icon: <Star className="w-5 h-5" />,
+      icon: <Star className="w-4 h-4" />,
       badge: favoritesCount,
     },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-800/80 px-4 py-2 sm:py-3">
-      <div className="max-w-md mx-auto flex items-center justify-around">
+    <nav 
+      aria-label="Navegación principal"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md pointer-events-auto"
+    >
+      <div className="flex items-center justify-between p-1.5 rounded-full bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl shadow-black/[0.08] dark:shadow-black/60">
         {tabs.map(tab => {
           const isActive = activeTab === tab.id;
           return (
@@ -48,33 +53,39 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
               key={tab.id}
               id={`nav-tab-${tab.id}`}
               onClick={() => {
-                onChangeTab(tab.id);
+                sound.playClick(isActive ? 700 : 850);
                 triggerHaptic('light');
+                onChangeTab(tab.id);
               }}
-              className={`relative flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-2xl transition-all cursor-pointer ${
+              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-xs font-medium transition-colors duration-150 btn-press cursor-pointer z-10 ${
                 isActive
-                  ? 'text-amber-400 font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'text-zinc-900 dark:text-zinc-50 font-semibold'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
             >
-              <div className="relative">
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute inset-0 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.08] shadow-xs -z-10"
+                  transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+                />
+              )}
+
+              <div className="relative flex items-center justify-center">
                 {tab.icon}
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 bg-amber-500 text-zinc-950 text-[9px] font-mono font-bold rounded-full">
+                  <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[9px] font-mono font-bold rounded-full leading-tight">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-mono tracking-tight">
+              <span className="tracking-tight text-[11px] sm:text-xs">
                 {tab.label}
               </span>
-              {isActive && (
-                <div className="absolute bottom-0 w-8 h-0.5 bg-amber-400 rounded-full" />
-              )}
             </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };

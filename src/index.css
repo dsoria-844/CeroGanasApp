@@ -1,42 +1,119 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Outfit', system-ui, sans-serif;
+
+    /* Apple Precision Easing Curves (Emil Kowalski) */
+    --ease-out-custom: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-custom: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-drawer-custom: cubic-bezier(0.32, 0.72, 0, 1);
+
+    /* Apple Clean Light Theme */
+    --bg-canvas: #f5f5f7;
+    --bg-surface: #ffffff;
+    --bg-surface-elevated: #ffffff;
+    --bg-surface-subtle: #f0f0f2;
+    --border-subtle: rgba(0, 0, 0, 0.06);
+    --border-medium: rgba(0, 0, 0, 0.1);
+    --text-primary: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --text-muted: #86868b;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --accent-primary: #0071e3;
+    --accent-amber: #f59e0b;
+    --card-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 12px 24px -4px rgba(0, 0, 0, 0.04);
   }
-  
+
+  .dark {
+    /* Apple Titanium OLED Dark Theme */
+    --bg-canvas: #000000;
+    --bg-surface: #1c1c1e;
+    --bg-surface-elevated: #2c2c2e;
+    --bg-surface-subtle: #161618;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.14);
+    --text-primary: #f5f5f7;
+    --text-secondary: #86868b;
+    --text-muted: #636366;
+    --glass-bg: rgba(28, 28, 30, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --accent-primary: #2997ff;
+    --accent-amber: #fbbf24;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
   body {
     font-family: var(--font-sans);
-    background-color: #09090b;
-    color: #fafafa;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    transition: background-color 200ms ease, color 200ms ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    letter-spacing: -0.01em;
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    letter-spacing: -0.025em;
   }
 }
 
-/* Custom scrollbars for dark mode */
+/* Micro-interaction & Tactile feedback classes */
+.btn-press {
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), opacity 120ms ease, background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-press:active {
+  transform: scale(0.965);
+}
+
+.card-press {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms ease, border-color 160ms ease;
+  user-select: none;
+}
+
+.card-press:active {
+  transform: scale(0.985);
+}
+
+.apple-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--card-shadow);
+  border-radius: 1.5rem;
+}
+
+/* Apple-style translucent blur */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Minimal Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 9999px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
 }
-
-.tap-highlight-transparent {
-  -webkit-tap-highlight-color: transparent;
-}
-

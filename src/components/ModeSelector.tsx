@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bike, ChefHat, ArrowRight, ShieldCheck, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { MealHistoryItem } from '../types';
+import { sound } from '../utils/audio';
 
 interface ModeSelectorProps {
   onSelectMode: (mode: 'delivery' | 'cooking') => void;
@@ -22,137 +23,121 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   const lastMeal = history.length > 0 ? history[0] : null;
 
   return (
-    <div className="w-full flex flex-col gap-8">
+    <div className="w-full flex flex-col gap-6">
       {/* Primary Mode Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Delivery Card (Deep Dark Zinc) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Delivery Card */}
         <div
           id="btn-mode-delivery"
-          onClick={() => onSelectMode('delivery')}
-          className="group relative bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col justify-between hover:border-zinc-500 transition-all duration-300 cursor-pointer shadow-lg min-h-[280px]"
+          onClick={() => {
+            sound.playClick(850);
+            onSelectMode('delivery');
+          }}
+          className="group relative bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] rounded-3xl p-7 flex flex-col justify-between hover:border-amber-500/50 dark:hover:border-amber-400/50 transition-all duration-200 card-press cursor-pointer shadow-md shadow-black/[0.03] dark:shadow-black/40 min-h-[260px]"
         >
           <div className="space-y-4">
-            <div className="w-14 h-14 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-100 group-hover:scale-110 transition-transform">
-              <Bike className="w-7 h-7 stroke-[1.5]" />
+            <div className="w-13 h-13 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+              <Bike className="w-6 h-6 stroke-[1.75]" />
             </div>
-            <div className="space-y-1.5">
-              <h2 className="text-2xl font-light text-zinc-50 tracking-tight">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 Pedir Delivery
               </h2>
-              <p className="text-zinc-400 text-sm leading-relaxed">
-                Ruleta rápida para cuando no hay tiempo ni ganas de limpiar. Máximo 3 giros diarios para evitar la fatiga.
+              <p className="text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed">
+                Ruleta rápida para cuando no hay tiempo ni ganas de limpiar. Máximo 3 giros para evitar la fatiga mental.
               </p>
             </div>
           </div>
 
-          <div className="pt-6 flex items-center justify-between border-t border-zinc-800/80 mt-4">
-            <div className="flex gap-2 flex-wrap">
-              <span className="text-[10px] uppercase font-mono tracking-wider bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800 text-zinc-400">
+          <div className="pt-5 flex items-center justify-between border-t border-black/[0.06] dark:border-white/[0.06] mt-4">
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-[10px] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">
                 Cheat Meal
               </span>
-              <span className="text-[10px] uppercase font-mono tracking-wider bg-zinc-950 px-2.5 py-1 rounded-md border border-zinc-800 text-zinc-400">
+              <span className="text-[10px] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">
                 Saludable
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-medium text-zinc-300 group-hover:text-white transition-colors">
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               <span>{remainingRerolls}/3 giros</span>
-              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center group-hover:translate-x-1 transition-transform border border-zinc-700">
-                <ArrowRight className="w-4 h-4 text-zinc-200" />
+              <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:translate-x-1 transition-transform border border-black/[0.04] dark:border-white/[0.06]">
+                <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Cooking Card (High-Contrast Inverted Ivory/White) */}
+        {/* Cooking Card */}
         <div
           id="btn-mode-cooking"
-          onClick={() => onSelectMode('cooking')}
-          className="group relative bg-zinc-100 text-zinc-900 border border-transparent rounded-3xl p-8 flex flex-col justify-between hover:bg-white transition-all duration-300 cursor-pointer shadow-xl min-h-[280px]"
+          onClick={() => {
+            sound.playClick(850);
+            onSelectMode('cooking');
+          }}
+          className="group relative bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] rounded-3xl p-7 flex flex-col justify-between hover:border-emerald-500/50 dark:hover:border-emerald-400/50 transition-all duration-200 card-press cursor-pointer shadow-md shadow-black/[0.03] dark:shadow-black/40 min-h-[260px]"
         >
           <div className="space-y-4">
-            <div className="w-14 h-14 bg-zinc-900 text-zinc-100 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-              <ChefHat className="w-7 h-7 stroke-[1.5]" />
+            <div className="w-13 h-13 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+              <ChefHat className="w-6 h-6 stroke-[1.75]" />
             </div>
-            <div className="space-y-1.5">
-              <h2 className="text-2xl font-medium text-zinc-950 tracking-tight">
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 Cocinar en Casa
               </h2>
-              <p className="text-zinc-600 text-sm leading-relaxed">
-                Optimiza lo que tienes en la heladera. Recetas inteligentes en 3 pasos ordenadas por afinidad.
+              <p className="text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed">
+                Aprovecha lo que tienes en la heladera. Recetas inteligentes en 3 pasos ordenadas por afinidad.
               </p>
             </div>
           </div>
 
-          <div className="pt-6 flex items-center justify-between border-t border-zinc-200 mt-4">
-            <div className="flex gap-2 flex-wrap">
-              <span className="text-[10px] uppercase font-mono tracking-wider bg-zinc-200 text-zinc-800 px-2.5 py-1 rounded-md">
+          <div className="pt-5 flex items-center justify-between border-t border-black/[0.06] dark:border-white/[0.06] mt-4">
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-[10px] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">
                 Proteínas
               </span>
-              <span className="text-[10px] uppercase font-mono tracking-wider bg-zinc-200 text-zinc-800 px-2.5 py-1 rounded-md">
+              <span className="text-[10px] uppercase font-semibold bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">
                 Verduras
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
+            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
               <span>{pantryCount} en despensa</span>
-              <div className="w-8 h-8 rounded-full bg-zinc-900 text-zinc-100 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                <ArrowRight className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:translate-x-1 transition-transform border border-black/[0.04] dark:border-white/[0.06]">
+                <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Exclusions and Rules Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-8 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-zinc-800 border border-zinc-700/60 flex items-center justify-center text-zinc-300 shrink-0">
-              <ShieldCheck className="w-4 h-4 text-zinc-400" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-200">
-                {exclusionsCount > 0
-                  ? `${exclusionsCount} exclusiones activas configuradas`
-                  : 'Filtros & Preferencias'}
-              </p>
-              <p className="text-[11px] text-zinc-400">
-                {exclusionsCount > 0
-                  ? 'Se omiten automáticamente de la ruleta y las recetas.'
-                  : 'Puedes bloquear ingredientes como cebolla, mariscos o frituras.'}
-              </p>
-            </div>
+      {/* Quick context info banner */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-sm shrink-0">
+            {lastMeal ? lastMeal.emoji : '🍽️'}
           </div>
-
-          <button
-            id="btn-quick-config-exclusions"
-            onClick={onOpenExclusions}
-            className="px-4 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-xs font-medium text-zinc-200 hover:border-zinc-500 hover:text-white transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Configurar Exclusiones</span>
-          </button>
-        </div>
-
-        {/* Anti-fatigue Reminder / Quote */}
-        <div className="md:col-span-4 bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-5 flex items-center">
-          {lastMeal ? (
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-mono">Última comida</p>
-              <p className="text-xs text-zinc-300 font-medium">
-                {lastMeal.emoji} {lastMeal.name}
-              </p>
-              <p className="text-[10px] text-zinc-500 italic">Bloqueado por 4 días para variar</p>
-            </div>
-          ) : (
-            <p className="text-xs text-zinc-400 italic font-serif leading-relaxed">
-              "Una decisión rápida ahorra energía mental para lo que de verdad importa."
+          <div>
+            <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+              {lastMeal ? `Última comida: ${lastMeal.name}` : 'Aún no registras comidas en tu historial'}
             </p>
-          )}
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+              {exclusionsCount > 0 ? `${exclusionsCount} ingredientes en lista negra` : 'Sin ingredientes excluidos'}
+            </p>
+          </div>
         </div>
+
+        <button
+          onClick={() => {
+            sound.playClick(750);
+            onOpenExclusions();
+          }}
+          className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium flex items-center gap-1.5 btn-press cursor-pointer"
+        >
+          <SlidersHorizontal className="w-3 h-3" />
+          <span>Ajustar exclusiones</span>
+        </button>
       </div>
     </div>
   );
 };
-

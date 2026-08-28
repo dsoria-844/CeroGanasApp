@@ -87,9 +87,10 @@ export interface AppState {
   lastRerollDate: string;
 }
 
-export type AppTab = 'decide' | 'weekly' | 'pantry' | 'favorites';
-
-export type MoodFilter = 'all' | 'quick' | 'protein' | 'cheat' | 'chef';
+export type AppTab = 'decide' | 'weekly' | 'pantry' | 'favorites' | 'history' | 'create_meal' | 'settings';
+export type ModalityFilter = 'all' | 'cooking' | 'delivery';
+export type FoodCategoryFilter = 'all' | 'quick' | 'meat' | 'pasta' | 'sandwiches' | 'empanadas' | 'protein' | 'desserts' | 'cheat';
+export type MoodFilter = ModalityFilter;
 
 export interface MealCardItem {
   id: string;

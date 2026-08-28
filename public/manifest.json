@@ -1,12 +1,12 @@
 {
-  "short_name": "¿Qué Como?",
-  "name": "¿Qué Como Hoy? - Decisor de Comidas",
-  "description": "Tu asistente definitivo para resolver la fatiga de decisión diaria: delivery al azar y recetas con lo que tienes en casa.",
+  "short_name": "Cero Ganas",
+  "name": "Cero Ganas - Decisor Inteligente",
+  "description": "Tu asistente definitivo para resolver la fatiga de decisión diaria: delivery y recetas sin vueltas.",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>",
+      "src": "/app-logo.jpg",
       "sizes": "192x192 512x512",
-      "type": "image/svg+xml"
+      "type": "image/jpeg"
     }
   ],
   "start_url": "/",

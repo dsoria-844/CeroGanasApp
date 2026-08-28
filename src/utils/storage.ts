@@ -12,7 +12,9 @@ import {
   DayPlan,
   MealPlanSlot,
   MealCardItem,
-  MoodFilter
+  MoodFilter,
+  ModalityFilter,
+  FoodCategoryFilter
 } from '../types';
 import { DELIVERY_DATASET, RECIPES_DATASET, PANTRY_ITEMS } from '../data/mealsData';
 
@@ -24,10 +26,147 @@ const STORAGE_KEYS = {
   REROLLS: 'que_como_rerolls_v1',
   FAVORITES: 'que_como_favorites_v1',
   WEEKLY_PLAN: 'que_como_weekly_plan_v1',
+  DUEL_THRESHOLD: 'que_como_duel_threshold_v1',
+  CUSTOM_MEALS: 'que_como_custom_meals_v1',
+  DEFAULT_DELIVERY_APP: 'que_como_default_delivery_app_v1',
+  DELETED_MEALS: 'que_como_deleted_meals_v1',
 };
+
+export interface CustomMealsStorage {
+  delivery: DeliveryOption[];
+  recipes: Recipe[];
+}
+
+export function loadCustomMeals(): CustomMealsStorage {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_MEALS);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        delivery: Array.isArray(parsed.delivery) ? parsed.delivery : [],
+        recipes: Array.isArray(parsed.recipes) ? parsed.recipes : [],
+      };
+    }
+  } catch (e) {
+    console.error('Error loading custom meals:', e);
+  }
+  return { delivery: [], recipes: [] };
+}
+
+export function saveCustomDeliveryMeal(meal: DeliveryOption): CustomMealsStorage {
+  const current = loadCustomMeals();
+  const updated: CustomMealsStorage = {
+    ...current,
+    delivery: [meal, ...current.delivery.filter(d => d.id !== meal.id)],
+  };
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_MEALS, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Error saving custom delivery meal:', e);
+  }
+  return updated;
+}
+
+export function saveCustomRecipeMeal(recipe: Recipe): CustomMealsStorage {
+  const current = loadCustomMeals();
+  const updated: CustomMealsStorage = {
+    ...current,
+    recipes: [recipe, ...current.recipes.filter(r => r.id !== recipe.id)],
+  };
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_MEALS, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Error saving custom recipe:', e);
+  }
+  return updated;
+}
+
+export function deleteCustomMeal(id: string): CustomMealsStorage {
+  const current = loadCustomMeals();
+  const updated: CustomMealsStorage = {
+    delivery: current.delivery.filter(d => d.id !== id),
+    recipes: current.recipes.filter(r => r.id !== id),
+  };
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_MEALS, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Error deleting custom meal:', e);
+  }
+  return updated;
+}
+
+export function loadDeletedMealIds(): string[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DELETED_MEALS);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Error loading deleted meal IDs:', e);
+  }
+  return [];
+}
+
+export function deleteAnyMeal(id: string): void {
+  deleteCustomMeal(id);
+  const deleted = loadDeletedMealIds();
+  if (!deleted.includes(id)) {
+    const updated = [...deleted, id];
+    try {
+      localStorage.setItem(STORAGE_KEYS.DELETED_MEALS, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving deleted meal ID:', e);
+    }
+  }
+}
+
+export function restoreDeletedMeal(id: string): void {
+  const deleted = loadDeletedMealIds();
+  const updated = deleted.filter(d => d !== id);
+  try {
+    localStorage.setItem(STORAGE_KEYS.DELETED_MEALS, JSON.stringify(updated));
+  } catch (e) {
+    console.error('Error restoring meal:', e);
+  }
+}
+
+export function getAllCatalogMeals(): { delivery: DeliveryOption[]; recipes: Recipe[]; customCount: number } {
+  const deleted = loadDeletedMealIds();
+  const custom = loadCustomMeals();
+  
+  const allDelivery = [...DELIVERY_DATASET, ...custom.delivery].filter(d => !deleted.includes(d.id));
+  const allRecipes = [...RECIPES_DATASET, ...custom.recipes].filter(r => !deleted.includes(r.id));
+
+  return {
+    delivery: allDelivery,
+    recipes: allRecipes,
+    customCount: custom.delivery.length + custom.recipes.length,
+  };
+}
 
 const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
 const MAX_DAILY_REROLLS = 3;
+
+export function loadDuelThreshold(): number {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DUEL_THRESHOLD);
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed) && parsed >= 2 && parsed <= 20) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return 2; // default 2
+}
+
+export function saveDuelThreshold(count: number): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DUEL_THRESHOLD, String(count));
+  } catch {
+    // ignore
+  }
+}
 
 export function getTodayDateString(): string {
   const now = new Date();
@@ -778,106 +917,196 @@ export function getPantryItemEmoji(id: string): string {
 
 // --- UNIFIED TINDER SWIPE DECK DATASET ---
 export function getUnifiedCardDataset(
-  mood: MoodFilter,
-  exclusions: string[],
-  history: MealHistoryItem[],
-  favorites: UserFavoriteMeal[]
+  modality: ModalityFilter = 'all',
+  category: FoodCategoryFilter = 'all',
+  exclusions: string[] = [],
+  history: MealHistoryItem[] = [],
+  favorites: UserFavoriteMeal[] = []
 ): MealCardItem[] {
-  const filteredDelivery = getEligibleDeliveryOptions('all', exclusions, history, false, favorites);
-  const filteredRecipes = RECIPES_DATASET.filter(recipe => {
-    // Exclude if contains excluded ingredient
-    const hasExcluded = recipe.requiredIngredients.some(id => exclusions.includes(id));
+  const deletedIds = loadDeletedMealIds();
+  const customMeals = loadCustomMeals();
+  const allDelivery = [...DELIVERY_DATASET, ...customMeals.delivery].filter(d => !deletedIds.includes(d.id));
+  const allRecipes = [...RECIPES_DATASET, ...customMeals.recipes].filter(r => !deletedIds.includes(r.id));
+
+  const filteredDelivery = allDelivery.filter(d => {
+    const hasExcluded = d.ingredients.some(ing => exclusions.includes(ing.toLowerCase().trim()));
+    if (hasExcluded) return false;
+    return true;
+  });
+
+  const filteredRecipes = allRecipes.filter(recipe => {
+    const hasExcluded = recipe.requiredIngredients.some(id => exclusions.includes(id.toLowerCase().trim()));
     if (hasExcluded) return false;
     return true;
   });
 
   const cards: MealCardItem[] = [];
 
-  // Transform delivery options
-  filteredDelivery.forEach(d => {
-    let matchesMood = false;
-    if (mood === 'all') matchesMood = true;
-    else if (mood === 'cheat' && (d.category === 'cheat_meal' || d.tags.some(t => /cheat|fast food|burger|pizza|frit/i.test(t)))) matchesMood = true;
-    else if (mood === 'quick' && parseInt(d.deliveryTime) <= 25) matchesMood = true;
-    else if (mood === 'protein' && (d.ingredients.some(i => /carne|pollo|pescado|atun|huevos/.test(i)) || d.tags.some(t => /carne|pollo|pescado/i.test(t)))) matchesMood = true;
-    else if (mood === 'chef' && (d.priceLevel === '$$$' || d.tags.some(t => /gourmet|artesanal/i.test(t)))) matchesMood = true;
+  const matchesCategory = (
+    tags: string[],
+    ingredients: string[],
+    isQuick: boolean,
+    isMeat: boolean,
+    isPasta: boolean,
+    isSandwich: boolean,
+    isEmpanada: boolean,
+    isProtein: boolean,
+    isCheat: boolean,
+    isDessert: boolean
+  ) => {
+    if (category === 'all') return true;
+    if (category === 'quick') return isQuick;
+    if (category === 'meat') return isMeat;
+    if (category === 'pasta') return isPasta;
+    if (category === 'sandwiches') return isSandwich;
+    if (category === 'empanadas') return isEmpanada;
+    if (category === 'protein') return isProtein;
+    if (category === 'desserts') return isDessert;
+    if (category === 'cheat') return isCheat;
+    return true;
+  };
 
-    if (matchesMood) {
-      cards.push({
-        id: d.id,
-        name: d.name,
-        type: 'delivery',
-        categoryLabel: d.category === 'cheat_meal' ? 'Delivery Cheat Meal' : d.category === 'healthy' ? 'Delivery Saludable' : 'Delivery Típico',
-        timeEstimate: d.deliveryTime,
-        tags: d.tags,
-        description: d.description,
-        ingredientsSummary: d.ingredients.map(getPantryItemName),
-        imageEmoji: d.imageEmoji,
-        caloriesApprox: d.caloriesApprox,
-        vibe: d.vibe,
-        deliveryOption: d,
-      });
-    }
-  });
+  // 1. Delivery Options (included if modality is 'all' or 'delivery')
+  if (modality === 'all' || modality === 'delivery') {
+    filteredDelivery.forEach(d => {
+      const isQuick = parseInt(d.deliveryTime) <= 25;
+      const isMeat = d.tags.some(t => /carne|cerdo|pollo|parrilla|lomito/i.test(t)) || d.ingredients.some(i => /carne|cerdo|pollo/.test(i));
+      const isPasta = d.tags.some(t => /pasta|guiso/i.test(t)) || d.ingredients.some(i => /fideos|noquis|ravioles/.test(i));
+      const isSandwich = d.tags.some(t => /sandwich|minuta|lomito/i.test(t));
+      const isEmpanada = d.tags.some(t => /empanada|regional/i.test(t));
+      const isProtein = d.ingredients.some(i => /carne|pollo|cerdo|huevos/.test(i)) || d.tags.some(t => /proteico|carne|pollo/i.test(t));
+      const isCheat = d.category === 'cheat_meal' || d.tags.some(t => /cheat|fast_food|frit/i.test(t));
+      const isDessert = d.tags.some(t => /postre|golosina|helado|torta|dulce|alfajor/i.test(t));
 
-  // Transform cooking recipes
-  filteredRecipes.forEach(r => {
-    let matchesMood = false;
-    const totalTime = r.prepTime + r.cookTime;
-
-    if (mood === 'all') matchesMood = true;
-    else if (mood === 'quick' && totalTime <= 15) matchesMood = true;
-    else if (mood === 'protein' && (r.tags.some(t => /prote|pollo|carne|atún/i.test(t)) || r.nutritionHighlight.includes('Proteína'))) matchesMood = true;
-    else if (mood === 'cheat' && (r.difficulty === 'Rápida' || r.category === 'Carne' || r.tags.some(t => /cheat|burger|pasta/i.test(t)))) matchesMood = true;
-    else if (mood === 'chef' && (r.difficulty === 'Media' || totalTime >= 20 || r.chefTip.length > 20)) matchesMood = true;
-
-    if (matchesMood) {
-      cards.push({
-        id: r.id,
-        name: r.name,
-        type: 'cooking',
-        categoryLabel: `Cocina Casera (${r.difficulty})`,
-        timeEstimate: `${totalTime} min`,
-        tags: r.tags,
-        description: r.nutritionHighlight || `Receta casera en 3 sencillos pasos.`,
-        ingredientsSummary: r.allIngredientsFormatted.slice(0, 4).map(i => i.name),
-        imageEmoji: r.imageEmoji,
-        caloriesApprox: r.caloriesApprox,
-        vibe: r.chefTip ? `Tip del Chef: ${r.chefTip}` : 'Fácil de preparar en casa con ingredientes simples.',
-        recipe: r,
-      });
-    }
-  });
-
-  // Also integrate user custom favorites if matching
-  favorites.forEach(f => {
-    cards.push({
-      id: f.id,
-      name: f.name,
-      type: f.source === 'cooking' ? 'cooking' : 'delivery',
-      categoryLabel: '⭐ Tu Favorito Personal',
-      timeEstimate: f.deliveryTime || '20-30 min',
-      tags: ['Favorito', ...f.tags],
-      description: f.description || 'Guardado en tu lista personal de favoritos.',
-      ingredientsSummary: f.ingredients.map(getPantryItemName),
-      imageEmoji: f.imageEmoji,
-      caloriesApprox: f.caloriesApprox,
-      vibe: f.vibe || 'Uno de tus platos predilectos.',
+      if (matchesCategory(d.tags, d.ingredients, isQuick, isMeat, isPasta, isSandwich, isEmpanada, isProtein, isCheat, isDessert)) {
+        cards.push({
+          id: d.id,
+          name: d.name,
+          type: 'delivery',
+          categoryLabel: isDessert ? 'Postres & Dulces' : d.category === 'cheat_meal' ? 'Delivery Antojo' : d.category === 'healthy' ? 'Delivery Saludable' : 'Delivery Típico',
+          timeEstimate: d.deliveryTime,
+          tags: d.tags,
+          description: d.description,
+          ingredientsSummary: d.ingredients.map(getPantryItemName),
+          imageEmoji: d.imageEmoji,
+          caloriesApprox: d.caloriesApprox,
+          vibe: d.vibe,
+          deliveryOption: d,
+        });
+      }
     });
+  }
+
+  // 2. Cooking Recipes (included if modality is 'all' or 'cooking')
+  if (modality === 'all' || modality === 'cooking') {
+    filteredRecipes.forEach(r => {
+      const totalTime = r.prepTime + r.cookTime;
+      const isQuick = totalTime <= 15;
+      const isMeat = r.category === 'Carne' || r.category === 'Pollo' || r.tags.some(t => /carne|cerdo|pollo/i.test(t));
+      const isPasta = r.category === 'Pasta' || r.tags.some(t => /pasta|guiso/i.test(t));
+      const isSandwich = r.tags.some(t => /sandwich|minuta|tarta/i.test(t));
+      const isEmpanada = r.tags.some(t => /empanada|tarta|vegetariano/i.test(t));
+      const isProtein = r.tags.some(t => /prote|pollo|carne/i.test(t)) || r.nutritionHighlight.includes('Proteína');
+      const isCheat = r.difficulty === 'Rápida' || r.tags.some(t => /cheat|clasico/i.test(t));
+      const isDessert = r.tags.some(t => /postre|golosina|dulce|flan|panqueque|chocotorta/i.test(t));
+
+      if (matchesCategory(r.tags, r.requiredIngredients, isQuick, isMeat, isPasta, isSandwich, isEmpanada, isProtein, isCheat, isDessert)) {
+        cards.push({
+          id: r.id,
+          name: r.name,
+          type: 'cooking',
+          categoryLabel: isDessert ? 'Postre Casero' : `Cocina Casera (${r.difficulty})`,
+          timeEstimate: `${totalTime} min`,
+          tags: r.tags,
+          description: r.nutritionHighlight || `Receta casera en 3 sencillos pasos.`,
+          ingredientsSummary: r.allIngredientsFormatted.slice(0, 4).map(i => i.name),
+          imageEmoji: r.imageEmoji,
+          caloriesApprox: r.caloriesApprox,
+          vibe: r.chefTip ? `Tip del Chef: ${r.chefTip}` : 'Fácil de preparar en casa con ingredientes simples.',
+          recipe: r,
+        });
+      }
+    });
+  }
+
+  // 3. User Favorites
+  favorites.forEach(f => {
+    const isFavCooking = f.source === 'cooking';
+    if (
+      (modality === 'all') ||
+      (modality === 'cooking' && isFavCooking) ||
+      (modality === 'delivery' && !isFavCooking)
+    ) {
+      cards.push({
+        id: f.id,
+        name: f.name,
+        type: isFavCooking ? 'cooking' : 'delivery',
+        categoryLabel: '⭐ Tu Favorito Personal',
+        timeEstimate: f.deliveryTime || '20-30 min',
+        tags: ['Favorito', ...f.tags],
+        description: f.description || 'Guardado en tu lista personal de favoritos.',
+        ingredientsSummary: f.ingredients.map(getPantryItemName),
+        imageEmoji: f.imageEmoji,
+        caloriesApprox: f.caloriesApprox,
+        vibe: f.vibe || 'Uno de tus platos predilectos.',
+      });
+    }
   });
 
-  // Shuffle for fresh swipe experience
   return cards.sort(() => Math.random() - 0.5);
 }
 
-// --- BLIND DECISION PICKER ---
+export type DeliveryApp = 'pedidosya' | 'rappi' | 'google';
+
+export function loadDefaultDeliveryApp(): DeliveryApp {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DEFAULT_DELIVERY_APP);
+    if (saved === 'pedidosya' || saved === 'rappi' || saved === 'google') {
+      return saved;
+    }
+  } catch {
+    // ignore
+  }
+  return 'pedidosya';
+}
+
+export function saveDefaultDeliveryApp(app: DeliveryApp): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DEFAULT_DELIVERY_APP, app);
+  } catch {
+    // ignore
+  }
+}
+
+export function getDeliverySearchUrl(dishName: string): string {
+  const app = loadDefaultDeliveryApp();
+  const query = encodeURIComponent(dishName);
+  if (app === 'pedidosya') {
+    return `https://www.pedidosya.com.ar/restaurantes?q=${query}`;
+  }
+  if (app === 'rappi') {
+    return `https://www.rappi.com.ar/search?query=${query}`;
+  }
+  return `https://www.google.com/search?q=${query}+delivery+pedir`;
+}
+
+// --- BLIND DECISION PICKER (EXCLUDES DESSERTS & SWEETS) ---
 export function pickBlindDecisionMeal(
   exclusions: string[],
   history: MealHistoryItem[],
   favorites: UserFavoriteMeal[]
 ): MealCardItem {
-  const cards = getUnifiedCardDataset('all', exclusions, history, favorites);
-  if (cards.length === 0) {
+  // Exclude desserts and sweets from "Tengo Hambre"
+  const allCards = getUnifiedCardDataset('all', 'all', exclusions, history, favorites);
+  const savoryCards = allCards.filter(card => {
+    const isDessert = card.tags.some(t => /postre|golosina|helado|torta|dulce|alfajor|flan|panqueque|chocotorta/i.test(t)) ||
+      (card.categoryLabel && /postre|dulce/i.test(card.categoryLabel));
+    return !isDessert;
+  });
+
+  const pool = savoryCards.length > 0 ? savoryCards : allCards;
+
+  if (pool.length === 0) {
     return {
       id: 'default_blind',
       name: 'Milanesa con Puré Casero',
@@ -892,7 +1121,7 @@ export function pickBlindDecisionMeal(
       vibe: 'Cero dudas. Prepará o pedite unas milanesas ya.',
     };
   }
-  return cards[Math.floor(Math.random() * cards.length)];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // --- WEEKLY PLAN GENERATION & STORAGE ---

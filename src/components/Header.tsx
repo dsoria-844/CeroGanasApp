@@ -1,113 +1,87 @@
 import React from 'react';
-import { History, ShieldAlert, Star, Zap, SlidersHorizontal } from 'lucide-react';
-import { MealHistoryItem } from '../types';
+import { Menu, Zap, Sun, Moon, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { AppTab } from '../types';
+import { Theme } from '../utils/theme';
+import { sound } from '../utils/audio';
 
 interface HeaderProps {
-  currentMode: string;
+  currentMode: AppTab;
   onNavigateHome: () => void;
-  onOpenHistory: () => void;
-  onOpenExclusions: () => void;
-  onOpenFavorites: () => void;
+  onOpenSidebar: () => void;
   onOpenBlindMode: () => void;
-  history: MealHistoryItem[];
-  exclusionsCount: number;
-  favoritesCount: number;
-  remainingRerolls: number;
+  theme: Theme;
+  onToggleTheme: () => void;
+  soundEnabled: boolean;
+  onToggleSound: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentMode,
   onNavigateHome,
-  onOpenHistory,
-  onOpenExclusions,
-  onOpenFavorites,
+  onOpenSidebar,
   onOpenBlindMode,
-  history,
-  exclusionsCount,
-  favoritesCount,
-  remainingRerolls,
+  theme,
+  onToggleTheme,
+  soundEnabled,
+  onToggleSound,
 }) => {
-  // Count items from the last 4 days
-  const recentHistoryCount = history.filter(
-    item => Date.now() - item.timestamp <= 4 * 24 * 60 * 60 * 1000
-  ).length;
-
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-md px-4 sm:px-8 py-3.5 sm:py-4 transition-all">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-        {/* Brand / Logo */}
-        <button
-          id="btn-header-home"
-          onClick={onNavigateHome}
-          className="text-left group transition-all tap-highlight-transparent flex items-center gap-2.5 cursor-pointer"
-        >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-lg group-hover:border-zinc-600 transition-colors">
-            🍽️
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-medium tracking-tight text-zinc-100 group-hover:text-white transition-colors flex items-center gap-1.5">
-              <span>QUÉ</span>
-              <span className="text-amber-400 font-light">COMO</span>
-            </h1>
-            <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest hidden xs:block">
-              Asistente de Decisión
-            </p>
-          </div>
-        </button>
-
-        {/* Action Controls */}
+    <header className="sticky top-0 z-30 w-full glass-panel px-4 sm:px-8 py-3 transition-colors duration-200">
+      <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+        {/* Left: Sidebar Menu Trigger & Logo */}
         <div className="flex items-center gap-2">
-          {/* PROMINENT BLIND MODE BUTTON */}
           <button
-            id="btn-header-blind-mode"
-            onClick={onOpenBlindMode}
-            className="flex items-center gap-1.5 text-xs font-semibold px-3 sm:px-4 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md shadow-amber-500/10 transition-transform active:scale-95 cursor-pointer"
-            title="Decisión Inmediata Forzada (Modo A Ciegas)"
+            id="btn-header-sidebar"
+            onClick={() => {
+              sound.playClick(800);
+              onOpenSidebar();
+            }}
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer transition-colors"
+            title="Abrir menú lateral"
           >
-            <Zap className="w-3.5 h-3.5 fill-zinc-950 text-zinc-950" />
-            <span className="font-mono tracking-tight">⚡ A Ciegas</span>
+            <Menu className="w-5 h-5" />
           </button>
 
-          {/* Ajustes / Lista Negra Button */}
+          {/* Brand */}
           <button
-            id="btn-header-exclusions"
-            onClick={onOpenExclusions}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full border transition-all cursor-pointer ${
-              exclusionsCount > 0
-                ? 'bg-zinc-900 text-zinc-100 border-zinc-700 hover:border-zinc-500 shadow-sm'
-                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700'
-            }`}
-            title="Ajustes / Lista Negra de ingredientes bloqueados"
+            id="btn-header-home"
+            onClick={() => {
+              sound.playClick(900);
+              onNavigateHome();
+            }}
+            className="text-left group flex items-center gap-2.5 btn-press cursor-pointer"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Lista Negra</span>
-            {exclusionsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-200 text-[10px] font-mono border border-zinc-700">
-                {exclusionsCount}
-              </span>
+            <img 
+              src="/app-logo.jpg" 
+              alt="Cero Ganas" 
+              className="w-8 h-8 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]" 
+            />
+            <h1 className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Cero Ganas
+            </h1>
+          </button>
+        </div>
+
+        {/* Right Action Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+
+          {/* Theme Toggle */}
+          <button
+            id="btn-header-theme"
+            onClick={() => {
+              sound.playClick(600);
+              onToggleTheme();
+            }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer transition-colors shadow-xs"
+            title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+          >
+            {theme === 'light' ? (
+              <Moon className="w-3.5 h-3.5" />
+            ) : (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
             )}
-          </button>
-
-          {/* History Button */}
-          <button
-            id="btn-header-history"
-            onClick={onOpenHistory}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full border transition-all cursor-pointer ${
-              recentHistoryCount > 0
-                ? 'bg-zinc-900 text-zinc-100 border-zinc-700 hover:border-zinc-500 shadow-sm'
-                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700'
-            }`}
-            title="Historial de comidas de los últimos 4 días"
-          >
-            <History className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Historial</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-zinc-300 text-[10px] font-mono border border-zinc-700">
-              {recentHistoryCount}
-            </span>
           </button>
         </div>
       </div>
     </header>
   );
 };
-
