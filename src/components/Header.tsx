@@ -55,8 +55,30 @@ export const Header: React.FC<HeaderProps> = ({
               alt="Cero Ganas" 
               className="w-8 h-8 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]" 
             />
-            <h1 className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Cero Ganas
+            <h1 
+              className="text-lg sm:text-xl font-extrabold tracking-wide flex items-center gap-1 select-none"
+              style={{ fontFamily: "'Bubblegum Sans', 'Fredoka', cursive, sans-serif" }}
+            >
+              <span 
+                className="drop-shadow-xs"
+                style={{ 
+                  color: '#FDF5E7',
+                  WebkitTextStroke: '0.6px rgba(0,0,0,0.5)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                }}
+              >
+                Cero
+              </span>
+              <span 
+                className="drop-shadow-xs"
+                style={{ 
+                  color: '#FDC305',
+                  WebkitTextStroke: '0.4px rgba(0,0,0,0.3)',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.15)'
+                }}
+              >
+                Ganas
+              </span>
             </h1>
           </button>
         </div>
