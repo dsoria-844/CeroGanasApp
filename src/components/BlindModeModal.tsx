@@ -105,7 +105,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-          className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl overflow-hidden text-center space-y-5"
+          className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl text-center space-y-5"
         >
           {/* Sloth chef pattern background */}
           <div 
