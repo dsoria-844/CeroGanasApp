@@ -705,6 +705,12 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               transition={{ type: 'spring', damping: 24, stiffness: 300 }}
               className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl overflow-hidden text-center space-y-5"
             >
+              {/* Sloth chef pattern background */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-[0.12] dark:opacity-[0.06] pointer-events-none"
+                style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
+              />
+
               {/* Subtle glowing ambient background effect */}
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
