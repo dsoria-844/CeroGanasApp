@@ -1,0 +1,6 @@
+{
+  "name": "¿Qué Como Hoy? - Decisor de Comidas PWA",
+  "description": "App para resolver la fatiga de decisión diaria de comidas: ruleta de delivery inteligente, sugerencias de cocina con tu despensa, historial de 4 días y filtros de exclusión.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
