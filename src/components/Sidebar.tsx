@@ -214,11 +214,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                 </button>
+
+                {/* Mascot Card */}
+                <div className="relative mt-2 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 overflow-hidden shadow-2xs">
+                  <div className="space-y-0.5 z-10">
+                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                      ¿Cero ganas hoy?
+                    </p>
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      ¡Tu chef perezoso decide por ti!
+                    </p>
+                  </div>
+                  <img
+                    src="/sidebar-sloth.jpg"
+                    alt="Chef Cero Ganas"
+                    className="w-16 h-16 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08] shrink-0"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Bottom Controls (Theme & Sound) */}
-            <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.06] space-y-3">
+            <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
               <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
                   {theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-zinc-400" />}
