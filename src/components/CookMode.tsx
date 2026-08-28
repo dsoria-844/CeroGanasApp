@@ -303,18 +303,34 @@ export const CookMode: React.FC<CookModeProps> = ({
                 Despensa Inteligente • Match por Ingredientes
               </p>
             </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                id="btn-open-custom-ingredient"
+                onClick={() => {
+                  sound.playClick(800);
+                  setIsAddingCustom(true);
+                }}
+                className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] text-zinc-700 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 shadow-xs btn-press cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agregar ingrediente</span>
+              </button>
 
-            <button
-              id="btn-open-custom-ingredient"
-              onClick={() => {
-                sound.playClick(800);
-                setIsAddingCustom(true);
-              }}
-              className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] text-zinc-700 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 shadow-xs btn-press cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Agregar ingrediente</span>
-            </button>
+              <button
+                id="btn-generate-recipe"
+                onClick={handleGenerate}
+                disabled={pantry.length === 0}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-xs btn-press ${
+                  pantry.length > 0
+                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60'
+                }`}
+                title={pantry.length === 0 ? 'Selecciona al menos 1 ingrediente' : 'Ver recetas'}
+              >
+                <ChefHat className="w-3.5 h-3.5" />
+                <span>Ver Recetas ({matchResults.length})</span>
+              </button>
+            </div>
           </div>
 
           {/* Inline Custom Ingredient Form */}
@@ -538,27 +554,6 @@ export const CookMode: React.FC<CookModeProps> = ({
               )}
             </div>
           )}
-
-          {/* Sticky CTA */}
-          <div className="sticky bottom-16 sm:bottom-20 z-20 pt-2">
-            <button
-              id="btn-generate-recipe"
-              onClick={handleGenerate}
-              disabled={pantry.length === 0}
-              className={`w-full py-3.5 px-6 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 shadow-lg btn-press ${
-                pantry.length > 0
-                  ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer'
-                  : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed'
-              }`}
-            >
-              <ChefHat className="w-4 h-4" />
-              <span>
-                {pantry.length === 0
-                  ? 'Selecciona al menos 1 ingrediente'
-                  : `Ver Recetas con Match (${pantry.length} ingredientes)`}
-              </span>
-            </button>
-          </div>
         </div>
       )}
 

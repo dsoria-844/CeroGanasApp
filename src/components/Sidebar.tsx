@@ -127,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             {/* Top Brand Mascot Header */}
             <div className="space-y-5">
-              <div className="relative p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2.5 shadow-2xs">
+              <div className="relative p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 flex items-center justify-between gap-2.5">
                 <div className="space-y-0.5 min-w-0">
                   <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
                     ¿Cero ganas hoy?
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <img
                     src="/sidebar-sloth.jpg"
                     alt="Chef Cero Ganas"
-                    className="w-12 h-12 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]"
+                    className="w-12 h-12 rounded-xl object-cover"
                   />
                   <button
                     id="btn-close-sidebar"

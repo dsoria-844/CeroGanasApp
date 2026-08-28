@@ -157,7 +157,7 @@ export function loadDuelThreshold(): number {
   } catch {
     // ignore
   }
-  return 2; // default 2
+  return 10; // default 10
 }
 
 export function saveDuelThreshold(count: number): void {
