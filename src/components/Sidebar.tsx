@@ -125,35 +125,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
             className="relative z-10 w-4/5 max-w-xs h-full bg-white dark:bg-zinc-900 border-r border-black/[0.08] dark:border-white/[0.08] p-6 shadow-2xl flex flex-col justify-between overflow-y-auto"
           >
-            {/* Top Brand Header */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-3">
-                  <img 
-                    src="/app-logo.jpg" 
-                    alt="Cero Ganas" 
-                    className="w-10 h-10 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]" 
-                  />
-                  <div>
-                    <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
-                      Cero Ganas
-                    </h2>
-                    <p className="text-[10px] text-zinc-400 font-mono">
-                      de pensar! pero si de comer!
-                    </p>
-                  </div>
+            {/* Top Brand Mascot Header */}
+            <div className="space-y-5">
+              <div className="relative p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2.5 shadow-2xs">
+                <div className="space-y-0.5 min-w-0">
+                  <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                    ¿Cero ganas hoy?
+                  </h2>
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                    ¡de pensar! pero si de comer!
+                  </p>
                 </div>
 
-                <button
-                  id="btn-close-sidebar"
-                  onClick={() => {
-                    sound.playClick(600);
-                    onClose();
-                  }}
-                  className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <img
+                    src="/sidebar-sloth.jpg"
+                    alt="Chef Cero Ganas"
+                    className="w-12 h-12 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]"
+                  />
+                  <button
+                    id="btn-close-sidebar"
+                    onClick={() => {
+                      sound.playClick(600);
+                      onClose();
+                    }}
+                    className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 btn-press cursor-pointer transition-colors"
+                    title="Cerrar menú"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Main Navigation Links */}
@@ -214,23 +215,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                 </button>
-
-                {/* Mascot Card */}
-                <div className="relative mt-2 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 overflow-hidden shadow-2xs">
-                  <div className="space-y-0.5 z-10">
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
-                      ¿Cero ganas hoy?
-                    </p>
-                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                      ¡Tu chef perezoso decide por ti!
-                    </p>
-                  </div>
-                  <img
-                    src="/sidebar-sloth.jpg"
-                    alt="Chef Cero Ganas"
-                    className="w-16 h-16 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08] shrink-0"
-                  />
-                </div>
               </div>
             </div>
 
