@@ -53,30 +53,16 @@ export const Header: React.FC<HeaderProps> = ({
             <img 
               src="/app-logo.jpg" 
               alt="Cero Ganas" 
-              className="w-8 h-8 rounded-xl object-cover shadow-xs border border-black/[0.08] dark:border-white/[0.08]" 
+              className="w-8 h-8 rounded-xl object-cover" 
             />
             <h1 
               className="text-lg sm:text-xl font-extrabold tracking-wide flex items-center gap-1 select-none"
               style={{ fontFamily: "'Bubblegum Sans', 'Fredoka', cursive, sans-serif" }}
             >
-              <span 
-                className="drop-shadow-xs"
-                style={{ 
-                  color: '#FDF5E7',
-                  WebkitTextStroke: '0.6px rgba(0,0,0,0.5)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                }}
-              >
+              <span style={{ color: '#FDF5E7' }}>
                 Cero
               </span>
-              <span 
-                className="drop-shadow-xs"
-                style={{ 
-                  color: '#FDC305',
-                  WebkitTextStroke: '0.4px rgba(0,0,0,0.3)',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.15)'
-                }}
-              >
+              <span style={{ color: '#FDC305' }}>
                 Ganas
               </span>
             </h1>
