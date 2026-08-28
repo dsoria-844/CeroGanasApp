@@ -10,6 +10,7 @@ import {
   Filter, 
   ChevronDown, 
   Check, 
+  CheckCircle2,
   Volume2, 
   VolumeX, 
   Zap, 
@@ -51,6 +52,7 @@ interface DecideTodayViewProps {
   onAddFavorite: (favorite: UserFavoriteMeal) => void;
   onDeleteFavorite: (id: string) => void;
   onOpenBlindMode: () => void;
+  onOpenRecipeModal?: (item: MealCardItem) => void;
   onNavigatePantry?: () => void;
 }
 
@@ -83,6 +85,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   onAddFavorite,
   onDeleteFavorite,
   onOpenBlindMode,
+  onOpenRecipeModal,
   onNavigatePantry,
 }) => {
   // Dropdown States
@@ -700,8 +703,12 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-              className="apple-card relative w-full max-w-sm p-6 sm:p-7 space-y-5 text-center overflow-hidden"
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl overflow-hidden text-center space-y-5"
             >
+              {/* Subtle glowing ambient background effect */}
+              <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
               {/* Close */}
               <button
                 onClick={() => {
@@ -710,59 +717,78 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   setIsPreparingRaffle(false);
                   setLikedCards([]);
                 }}
-                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer"
+                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
 
+              {/* Header */}
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
+                  <span>Sorteo Final ({likedCards.length} opciones)</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
+                  ¡Sorteo Final!
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {isPreparingRaffle 
+                    ? `Reuniendo tus ${likedCards.length} opciones favoritas...` 
+                    : 'Sorteo aleatorio entre tus platos seleccionados.'}
+                </p>
+              </div>
+
               {/* 2-SECOND SKELETON / PREPARING STATE */}
               {isPreparingRaffle ? (
-                <div className="py-4 space-y-4 flex flex-col items-center justify-center">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
-                    <span>Sorteo Final ({likedCards.length} opciones)</span>
-                  </div>
-
-                  <div className="relative w-36 h-36 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800 animate-pulse">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="py-4 space-y-4 flex flex-col items-center justify-center"
+                >
+                  <div className="relative w-44 h-44 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800 animate-pulse">
                     <img
                       src="/sloth-thinking.jpg"
                       alt="Preparando el sorteo..."
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex flex-col items-center justify-center gap-1">
-                      <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center animate-spin">
-                        <Sparkles className="w-5 h-5 text-amber-400" />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1">
+                      <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center animate-spin">
+                        <Sparkles className="w-6 h-6 text-amber-400" />
                       </div>
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Preparando sorteo...
+                      </span>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                      Preparando el sorteo
-                    </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Reuniendo tus {likedCards.length} opciones favoritas...
-                    </p>
-                  </div>
-                </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold tracking-wide animate-pulse">
+                    Reuniendo tus {likedCards.length} opciones favoritas...
+                  </p>
+                </motion.div>
               ) : duelWinner && (
-                <>
-                  <div className="space-y-1">
-                    <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold">
-                      Sorteo Final ({likedCards.length} opciones)
-                    </span>
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                      {isSpinningDuel ? 'Sorteando tu comida...' : '¡Plato Ganador!'}
-                    </h3>
-                  </div>
-
-                  {/* Winner Visual */}
-                  <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3">
-                    <div className="text-5xl">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+                  className="space-y-5"
+                >
+                  {/* Decree Card (Normalized) */}
+                  <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3 relative overflow-hidden">
+                    <div className="text-5xl sm:text-6xl">
                       {duelWinner.imageEmoji}
                     </div>
 
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
+                      <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
+                        {isSpinningDuel ? 'Sorteando tu comida...' : 'Salio sorteado:'}
+                      </span>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
+                        {duelWinner.name}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
                       <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full inline-block ${
                         duelWinner.type === 'cooking'
                           ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200'
@@ -770,36 +796,58 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                       }`}>
                         {duelWinner.type === 'cooking' ? '🍳 Cocinar en Casa' : '🛵 Pedir Delivery'}
                       </span>
-                      <h4 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                        {duelWinner.name}
-                      </h4>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {duelWinner.timeEstimate} • {duelWinner.categoryLabel}
-                      </p>
+                      <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                        ⏱️ {duelWinner.timeEstimate}
+                      </span>
+                      <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                        {duelWinner.categoryLabel}
+                      </span>
+                      {duelWinner.caloriesApprox && (
+                        <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                          🔥 {duelWinner.caloriesApprox}
+                        </span>
+                      )}
                     </div>
+
+                    {duelWinner.vibe && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 italic pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                        "{duelWinner.vibe}"
+                      </p>
+                    )}
                   </div>
 
-                  {/* Actions */}
+                  {/* Normalized Contextual Action Buttons */}
                   {!isSpinningDuel && (
-                    <div className="space-y-2 pt-1">
+                    <div className="space-y-2.5 pt-1">
                       {duelWinner.type === 'delivery' ? (
                         <button
+                          id="btn-duel-delivery"
                           onClick={() => handleOpenDelivery(duelWinner.name)}
-                          className="w-full py-3 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold text-xs flex items-center justify-center gap-1.5 btn-press cursor-pointer"
+                          className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 btn-press cursor-pointer shadow-md shadow-amber-500/20"
                         >
-                          <Bike className="w-3.5 h-3.5" />
-                          <span>Buscar en apps de delivery</span>
+                          <span>🛵 Abrir en app de delivery / Buscar</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       ) : (
-                        duelWinner.recipe && (
-                          <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-700 dark:text-zinc-300 text-left space-y-1">
-                            <strong className="font-semibold">Paso 1: </strong>{duelWinner.recipe.steps[0]}
-                          </div>
+                        duelWinner.recipe && onOpenRecipeModal && (
+                          <button
+                            id="btn-duel-view-recipe"
+                            onClick={() => {
+                              sound.playClick(800);
+                              setIsDuelActive(false);
+                              setLikedCards([]);
+                              onOpenRecipeModal(duelWinner);
+                            }}
+                            className="w-full py-3.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-100 font-medium text-xs flex items-center justify-center gap-2 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer"
+                          >
+                            <ChefHat className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Ver Receta en 3 Pasos</span>
+                          </button>
                         )
                       )}
 
                       <button
+                        id="btn-duel-accept"
                         onClick={() => {
                           sound.playSuccess();
                           triggerHaptic('success');
@@ -812,14 +860,14 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           setIsDuelActive(false);
                           setLikedCards([]);
                         }}
-                        className="w-full py-3 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-1.5 btn-press cursor-pointer shadow-xs"
+                        className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 shadow-md btn-press cursor-pointer"
                       >
-                        <Check className="w-4 h-4" />
-                        <span>Guardar en historial de comidas</span>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>¡Acepto la orden! Guardar en historial</span>
                       </button>
                     </div>
                   )}
-                </>
+                </motion.div>
               )}
             </motion.div>
           </div>
