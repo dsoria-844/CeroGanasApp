@@ -462,25 +462,25 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         </div>
       </div>
 
-      {/* CENTRAL DISH CARD WITH LATERAL ARROWS */}
-      <div className="relative w-full h-[460px] min-h-[460px] max-h-[460px] flex items-center justify-center overflow-hidden">
+      {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
+      <div className="relative w-full h-[470px] min-h-[470px] max-h-[470px] flex items-center justify-center overflow-hidden rounded-3xl">
         {/* Previous Arrow Button */}
         <button
           onClick={handlePrev}
           disabled={currentIndex === 0}
-          className="absolute left-2 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
           title="Plato anterior"
         >
-          <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+          <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
         </button>
 
         {/* Next Arrow Button */}
         <button
           onClick={handleNext}
-          className="absolute right-2 z-30 w-11 h-11 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
           title="Siguiente plato"
         >
-          <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+          <ChevronRight className="w-5 h-5 stroke-[2.5]" />
         </button>
 
         {/* The Card */}
@@ -496,7 +496,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             >
               {/* FRONT FACE (PORTADA) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
+                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
                 {/* Top Badge & Favorite Button */}
@@ -526,13 +526,13 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 </div>
 
                 {/* Main Emoji & Title */}
-                <div className="text-center space-y-3 py-2">
-                  <div className="w-24 h-24 rounded-3xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-6xl mx-auto shadow-xs">
+                <div className="text-center space-y-3 py-1">
+                  <div className="w-20 h-20 rounded-3xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-5xl mx-auto shadow-xs">
                     {currentCard.imageEmoji}
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight px-4">
+                    <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight px-3">
                       {currentCard.name}
                     </h3>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
@@ -542,7 +542,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 </div>
 
                 {/* Tags / Ingredients Preview */}
-                <div className="space-y-2">
+                <div className="space-y-1.5 pb-2">
                   <div className="flex flex-wrap items-center justify-center gap-1.5">
                     {currentCard.tags.slice(0, 4).map((tag, idx) => (
                       <span
@@ -554,7 +554,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                     ))}
                   </div>
 
-                  <p className="text-center text-[11px] text-zinc-400 font-medium italic">
+                  <p className="text-center text-[10px] text-zinc-400 font-medium italic">
                     Toca la tarjeta para ver la receta / detalles 🔄
                   </p>
                 </div>
@@ -562,7 +562,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
               {/* BACK FACE (RECETA / DETALLES) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-xl flex flex-col justify-between overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]"
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
                 <div className="space-y-3">
@@ -643,47 +643,52 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             </button>
           </div>
         )}
-      </div>
 
-      {/* BOTTOM ACTION BAR (RECHAZAR, FLIP, ME INTERESA) */}
-      <div className="flex items-center gap-2.5 pt-1">
-        {/* Reject Button */}
-        <button
-          onClick={handleReject}
-          className="flex-1 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 hover:text-red-500 dark:hover:bg-zinc-700 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer border border-black/[0.06] dark:border-white/[0.08]"
-          title="Descartar este plato y avanzar"
-        >
-          <X className="w-4 h-4 stroke-[2.5]" />
-          <span>Rechazar</span>
-        </button>
+        {/* FLOATING ACTION BUTTONS OVER THE CARD */}
+        {currentCard && (
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-3 left-4 right-4 z-30 flex items-center gap-2 p-1.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
+          >
+            {/* Reject Button */}
+            <button
+              onClick={handleReject}
+              className="flex-1 h-10 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer transition-colors"
+              title="Descartar este plato y avanzar"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+              <span>Rechazar</span>
+            </button>
 
-        {/* Flip Card Button */}
-        <button
-          onClick={handleToggleFlip}
-          className={`px-4 h-12 rounded-2xl border flex items-center justify-center gap-1.5 shadow-xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
-            isFlipped
-              ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent'
-              : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
-          }`}
-          title="Ver receta / portada"
-        >
-          <RotateCw className="w-4 h-4 stroke-[2]" />
-          <span>{isFlipped ? 'Portada' : 'Receta'}</span>
-        </button>
+            {/* Flip Card Button */}
+            <button
+              onClick={handleToggleFlip}
+              className={`px-3.5 h-10 rounded-xl border flex items-center justify-center gap-1.5 shadow-2xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
+                isFlipped
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent font-bold'
+                  : 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
+              }`}
+              title="Ver receta / portada"
+            >
+              <RotateCw className="w-3.5 h-3.5 stroke-[2]" />
+              <span>{isFlipped ? 'Portada' : 'Receta'}</span>
+            </button>
 
-        {/* Like Button */}
-        <button
-          onClick={handleLike}
-          className={`flex-1 h-12 rounded-2xl text-white dark:text-zinc-900 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer shadow-sm ${
-            isCurrentlyLiked
-              ? 'bg-emerald-600 dark:bg-emerald-400 text-white dark:text-zinc-950 font-bold'
-              : 'bg-zinc-900 dark:bg-white'
-          }`}
-          title="Marcar como 'Me interesa' para el sorteo final"
-        >
-          <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
-          <span>{isCurrentlyLiked ? '¡Me interesa!' : 'Me interesa'}</span>
-        </button>
+            {/* Like Button */}
+            <button
+              onClick={handleLike}
+              className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
+                isCurrentlyLiked
+                  ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-zinc-950 font-bold shadow-emerald-500/20'
+                  : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+              }`}
+              title="Marcar como 'Me interesa' para el sorteo final"
+            >
+              <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
+              <span>{isCurrentlyLiked ? '¡Me interesa!' : 'Me interesa'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* FINAL RAFFLE MODAL (WITH 2-SECOND PREPARATION) */}

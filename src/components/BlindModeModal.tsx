@@ -206,7 +206,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
 
                 <div className="space-y-1">
                   <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
-                    ⚡ HOY COMES:
+                    Salio sorteado:
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
                     {chosenMeal.name}
@@ -269,10 +269,6 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
                   <span>¡Acepto la orden! Guardar en historial</span>
                 </button>
               </div>
-
-              <p className="text-[10px] text-zinc-400 text-center">
-                * El botón de reintentar fue deshabilitado para evitar la parálisis de análisis.
-              </p>
             </motion.div>
           )}
         </motion.div>
