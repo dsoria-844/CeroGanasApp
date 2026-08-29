@@ -548,20 +548,33 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                     <span>{currentCard.type === 'cooking' ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
                   </span>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleFavorite(currentCard);
-                    }}
-                    className={`p-2 rounded-full border transition-all btn-press cursor-pointer ${
-                      isFavorited
-                        ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm'
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-black/[0.06] dark:border-white/[0.06]'
-                    }`}
-                    title={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                  >
-                    <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFlip();
+                      }}
+                      className="p-2 rounded-full border border-black/[0.06] dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all btn-press cursor-pointer"
+                      title="Ver receta o ingredientes"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavorite(currentCard);
+                      }}
+                      className={`p-2 rounded-full border transition-all btn-press cursor-pointer ${
+                        isFavorited
+                          ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm'
+                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-black/[0.06] dark:border-white/[0.06]'
+                      }`}
+                      title={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                    >
+                      <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Dish Center Info */}
@@ -710,40 +723,26 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           </div>
         )}
 
-        {/* FLOATING ACTION BUTTONS OVER THE CARD */}
+        {/* FLOATING ACTION BUTTONS OVER THE CARD (3 CLEAN & SPACIOUS BUTTONS) */}
         {currentCard && (
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-3 left-3 right-3 z-30 flex items-center gap-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
+            className="absolute bottom-3 left-3.5 right-3.5 z-30 flex items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
           >
             {/* Reject Button */}
             <button
               onClick={handleReject}
-              className="flex-1 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1 font-semibold text-xs btn-press cursor-pointer transition-colors"
+              className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer transition-colors"
               title="Descartar este plato y avanzar"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
-              <span className="hidden sm:inline">Rechazar</span>
-            </button>
-
-            {/* Flip Card Button */}
-            <button
-              onClick={handleToggleFlip}
-              className={`px-3 h-10 rounded-xl border flex items-center justify-center gap-1 shadow-2xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
-                isFlipped
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent font-bold'
-                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
-              }`}
-              title="Ver receta / portada"
-            >
-              <RotateCw className="w-3.5 h-3.5 stroke-[2]" />
-              <span>{isFlipped ? 'Portada' : 'Receta'}</span>
+              <span>Rechazar</span>
             </button>
 
             {/* Like Button */}
             <button
               onClick={handleLike}
-              className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1 font-semibold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
+              className={`flex-[1.1] h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
                 isCurrentlyLiked
                   ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-zinc-950 font-bold shadow-emerald-500/20'
                   : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
@@ -758,7 +757,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             <button
               id="btn-direct-choose"
               onClick={handleDirectSelect}
-              className="px-3 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1 shadow-xs btn-press cursor-pointer transition-colors shrink-0"
+              className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
               title="Elegir este plato directamente hoy"
             >
               <Check className="w-4 h-4 stroke-[3]" />
