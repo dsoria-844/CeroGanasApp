@@ -10,6 +10,7 @@ import { HistoryView } from './components/HistoryView';
 import { CreateMealView } from './components/CreateMealView';
 import { BlindModeModal } from './components/BlindModeModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { WelcomeModal } from './components/WelcomeModal';
 import { MealConfirmedModal } from './components/MealConfirmedModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
@@ -44,6 +45,7 @@ export default function App() {
   const [remainingRerolls, setRemainingRerolls] = useState<number>(3);
   
   // Modals
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isBlindModeOpen, setIsBlindModeOpen] = useState(false);
   const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
@@ -57,6 +59,7 @@ export default function App() {
 
   // Lock background scroll whenever any modal or drawer is active
   useBodyScrollLock(
+    isWelcomeOpen ||
     isOnboardingOpen ||
     isBlindModeOpen ||
     isExclusionsOpen ||
@@ -79,6 +82,12 @@ export default function App() {
     
     const rerollState = loadRerollsState();
     setRemainingRerolls(rerollState.remaining);
+
+    // Check if user has already seen welcome screen
+    const seenWelcome = localStorage.getItem('cero_ganas_welcome_seen');
+    if (!seenWelcome) {
+      setIsWelcomeOpen(true);
+    }
   }, []);
 
   const handleToggleTheme = () => {
@@ -145,7 +154,7 @@ export default function App() {
         onChangeTab={tab => setActiveTab(tab)}
         onOpenHistory={() => setActiveTab('history')}
         onOpenBlindMode={() => setIsBlindModeOpen(true)}
-        onOpenHelp={() => setIsOnboardingOpen(true)}
+        onOpenHelp={() => setIsWelcomeOpen(true)}
         history={history}
         exclusionsCount={exclusions.length}
         favoritesCount={favorites.length}
@@ -161,7 +170,7 @@ export default function App() {
         onNavigateHome={() => setActiveTab('decide')}
         onOpenSidebar={() => setIsSidebarOpen(true)}
         onOpenBlindMode={() => setIsBlindModeOpen(true)}
-        onOpenHelp={() => setIsOnboardingOpen(true)}
+        onOpenHelp={() => setIsWelcomeOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />
@@ -354,6 +363,20 @@ export default function App() {
         onClose={() => setIsExclusionsOpen(false)}
         exclusions={exclusions}
         onUpdateExclusions={updated => setExclusions(updated)}
+      />
+
+      {/* Welcome & Mascot Greeting Modal */}
+      <WelcomeModal
+        isOpen={isWelcomeOpen}
+        onClose={() => setIsWelcomeOpen(false)}
+        onSelectTab={(tab) => {
+          setActiveTab(tab);
+          setIsWelcomeOpen(false);
+        }}
+        onOpenBlindMode={() => {
+          setIsWelcomeOpen(false);
+          setIsBlindModeOpen(true);
+        }}
       />
 
       {/* Onboarding Interactive Guide Modal */}
