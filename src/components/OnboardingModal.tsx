@@ -129,12 +129,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
           style={{ touchAction: 'none', overscrollBehavior: 'none' }}
         >
-          {/* Sloth Background Pattern */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-[0.09] dark:opacity-[0.045] pointer-events-none"
-            style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
-          />
-
           {/* Ambient Glow */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />

@@ -111,11 +111,6 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 pb-8 transition-colors duration-200">
-      {/* App Ambient Sloth Pattern Background */}
-      <div 
-        className="fixed inset-0 bg-repeat opacity-[0.20] dark:opacity-[0.10] pointer-events-none z-0"
-        style={{ backgroundImage: "url('/modal-bg-sloths.jpg')", backgroundSize: '280px 280px' }}
-      />
       {/* Sidebar Navigation Drawer */}
       <Sidebar
         isOpen={isSidebarOpen}
