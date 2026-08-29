@@ -23,7 +23,8 @@ import {
   Cake,
   Clock,
   RefreshCw,
-  ShoppingBag
+  ShoppingBag,
+  Dices
 } from 'lucide-react';
 import { 
   MealCardItem, 
@@ -58,7 +59,7 @@ interface DecideTodayViewProps {
 
 // Modalidades Dropdown Options
 const MODALITIES: { id: ModalityFilter; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Todos los platos', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
+  { id: 'all', label: 'Modalidad', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
   { id: 'cooking', label: 'Cocinar en casa', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
   { id: 'delivery', label: 'Pedir delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
 ];
@@ -288,10 +289,37 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     }
   };
 
+  const handleDirectSelect = () => {
+    if (!currentCard) return;
+    sound.playSuccess();
+    triggerHaptic('success');
+    triggerVictoryConfetti();
+    onAcceptMeal(
+      currentCard.name,
+      currentCard.type,
+      currentCard.imageEmoji,
+      'Elección directa'
+    );
+  };
+
+  const handleDirectRaffle = () => {
+    sound.playClick(900);
+    triggerHaptic('medium');
+    const pool = likedCards.length > 0 ? likedCards : cardDeck;
+    if (pool.length === 0) return;
+    setIsDuelActive(true);
+    setIsPreparingRaffle(true);
+
+    setTimeout(() => {
+      setIsPreparingRaffle(false);
+      startRaffle(pool);
+    }, 2000);
+  };
+
   const isFavorited = currentCard ? isMealFavorited(currentCard.name, favorites) : false;
   const isCurrentlyLiked = currentCard ? likedCards.some(c => c.id === currentCard.id) : false;
 
-  const currentModalityLabel = MODALITIES.find(m => m.id === selectedModality)?.label || 'Todos los platos';
+  const currentModalityLabel = MODALITIES.find(m => m.id === selectedModality)?.label || 'Modalidad';
   const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
 
   return (
@@ -448,21 +476,28 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         </div>
       </div>
 
-      {/* PROGRESS TRACKER */}
-      <div className="apple-card p-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      {/* PROGRESS TRACKER & DIRECT RAFFLE BUTTON */}
+      <div className="apple-card p-2.5 sm:p-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 truncate">
           <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            Plato {cardDeck.length > 0 ? currentIndex + 1 : 0} de {cardDeck.length}
+            Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
           </span>
-          <span className="text-[11px] text-zinc-400">
-            ({likedCards.length} elegidos)
+          <span className="text-[11px] text-zinc-400 truncate">
+            {likedCards.length} me interesa
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>Sorteo: {likedCards.length}/{duelThreshold}</span>
-        </div>
+        {/* Direct Raffle Button */}
+        <button
+          id="btn-direct-raffle"
+          onClick={handleDirectRaffle}
+          disabled={cardDeck.length === 0}
+          className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
+          title="Sortear directamente ahora"
+        >
+          <Dices className="w-3.5 h-3.5" />
+          <span>{likedCards.length > 0 ? `Sortear (${likedCards.length})` : 'Sortear ya'}</span>
+        </button>
       </div>
 
       {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
@@ -518,124 +553,152 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                       e.stopPropagation();
                       handleToggleFavorite(currentCard);
                     }}
-                    className={`p-2 rounded-full border transition-all btn-press ${
+                    className={`p-2 rounded-full border transition-all btn-press cursor-pointer ${
                       isFavorited
-                        ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-500/30 text-rose-500 shadow-xs'
-                        : 'bg-zinc-50 dark:bg-zinc-800 border-black/[0.06] dark:border-white/[0.08] text-zinc-400 hover:text-zinc-600'
+                        ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-black/[0.06] dark:border-white/[0.06]'
                     }`}
+                    title={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                   >
                     <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
                   </button>
                 </div>
 
-                {/* Main Emoji & Title */}
-                <div className="text-center space-y-3 py-1">
-                  <div className="w-20 h-20 rounded-3xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-5xl mx-auto shadow-xs">
+                {/* Dish Center Info */}
+                <div className="flex flex-col items-center justify-center text-center my-auto py-2">
+                  <div className="text-7xl mb-3 filter drop-shadow-md select-none transform hover:scale-105 transition-transform">
                     {currentCard.imageEmoji}
                   </div>
 
-                  <div className="space-y-1">
-                    <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight px-3">
-                      {currentCard.name}
-                    </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                      {currentCard.categoryLabel} • {currentCard.timeEstimate}
-                    </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight mb-2">
+                    {currentCard.name}
+                  </h3>
+
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[280px] line-clamp-2 leading-relaxed">
+                    {currentCard.description}
+                  </p>
+
+                  <div className="flex items-center justify-center gap-2 mt-3.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                      <Clock className="w-3 h-3 text-zinc-400" />
+                      <span>{currentCard.timeEstimate}</span>
+                    </span>
+
+                    {currentCard.caloriesApprox && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                        <Flame className="w-3 h-3 text-orange-500" />
+                        <span>~{currentCard.caloriesApprox} kcal</span>
+                      </span>
+                    )}
+
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                      <span>{currentCard.vibe}</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Tags / Ingredients Preview */}
-                <div className="space-y-1.5 pb-2">
-                  <div className="flex flex-wrap items-center justify-center gap-1.5">
-                    {currentCard.tags.slice(0, 4).map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <p className="text-center text-[10px] text-zinc-400 font-medium italic">
-                    Toca la tarjeta para ver la receta / detalles 🔄
-                  </p>
+                {/* Bottom hint */}
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 font-medium">
+                  <RotateCw className="w-3 h-3" />
+                  <span>Toca para ver receta e ingredientes</span>
                 </div>
               </div>
 
               {/* BACK FACE (RECETA / DETALLES) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                className="absolute inset-0 w-full h-full rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [transform:rotateY(180deg)] [backface-visibility:hidden]"
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
-                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                      <span>{currentCard.imageEmoji}</span>
-                      <span>{currentCard.name}</span>
-                    </span>
-                    <span className="text-[10px] text-zinc-400 uppercase font-semibold">
-                      Receta & Ingredientes
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{currentCard.imageEmoji}</span>
+                      <div>
+                        <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 line-clamp-1">
+                          {currentCard.name}
+                        </h4>
+                        <span className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
+                          {currentCard.type === 'cooking' ? 'Receta Casera' : 'Detalles de Delivery'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFlip();
+                      }}
+                      className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-200/60 dark:bg-zinc-800"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
 
-                  {/* Cooking Steps or Delivery Description */}
-                  {currentCard.recipe ? (
-                    <div className="space-y-2">
-                      <div className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
-                        {currentCard.recipe.steps.map((step, idx) => (
-                          <div key={idx} className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 flex items-start gap-2">
-                            <span className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                              {idx + 1}
+                  {currentCard.type === 'cooking' && currentCard.recipe ? (
+                    <div className="space-y-3 text-left">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                          Ingredientes
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {currentCard.recipe.ingredients.map((ing, i) => (
+                            <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300">
+                              {ing}
                             </span>
-                            <p className="leading-snug">{step}</p>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
 
-                      {/* Smart Pantry Matcher */}
-                      {pantry.length > 0 && (
-                        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
-                          <span className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                            <ShoppingBag className="w-3 h-3" />
-                            <span>Despensa Inteligente</span>
-                          </span>
-                          <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
-                            Ingredientes: {currentCard.recipe.allIngredientsFormatted.map(i => i.name).join(', ')}
-                          </p>
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                          Pasos de Cocina
+                        </p>
+                        <div className="space-y-1.5">
+                          {currentCard.recipe.instructions.slice(0, 3).map((step, i) => (
+                            <div key={i} className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                              <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                                {i + 1}
+                              </span>
+                              <span className="leading-tight">{step}</span>
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="space-y-3 pt-2">
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        {currentCard.description}
-                      </p>
+                    <div className="space-y-3 text-left">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
+                          Información
+                        </p>
+                        <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                          {currentCard.description}
+                        </p>
+                      </div>
 
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenDelivery(currentCard.name);
                         }}
-                        className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                        className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-sm btn-press cursor-pointer"
                       >
-                        <Bike className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                         <span>Buscar en App de Delivery</span>
                       </button>
                     </div>
                   )}
                 </div>
 
-                <p className="text-center text-[10px] text-zinc-400 font-medium italic pt-2">
+                <div className="text-center pt-2 text-[10px] text-zinc-400">
                   Toca para volver a la portada
-                </p>
+                </div>
               </div>
             </motion.div>
           </div>
         ) : (
-          <div className="apple-card p-10 text-center space-y-3">
-            <Utensils className="w-8 h-8 text-zinc-400 mx-auto" />
-            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+          <div className="apple-card p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
               No hay más platos en esta categoría
             </p>
             <button
@@ -651,25 +714,25 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         {currentCard && (
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-3 left-4 right-4 z-30 flex items-center gap-2 p-1.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
+            className="absolute bottom-3 left-3 right-3 z-30 flex items-center gap-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
           >
             {/* Reject Button */}
             <button
               onClick={handleReject}
-              className="flex-1 h-10 rounded-xl bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer transition-colors"
+              className="flex-1 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1 font-semibold text-xs btn-press cursor-pointer transition-colors"
               title="Descartar este plato y avanzar"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
-              <span>Rechazar</span>
+              <span className="hidden sm:inline">Rechazar</span>
             </button>
 
             {/* Flip Card Button */}
             <button
               onClick={handleToggleFlip}
-              className={`px-3.5 h-10 rounded-xl border flex items-center justify-center gap-1.5 shadow-2xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
+              className={`px-3 h-10 rounded-xl border flex items-center justify-center gap-1 shadow-2xs btn-press cursor-pointer font-semibold text-xs shrink-0 transition-colors ${
                 isFlipped
                   ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent font-bold'
-                  : 'bg-white/90 dark:bg-zinc-800/90 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
+                  : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border-black/[0.08] dark:border-white/[0.08]'
               }`}
               title="Ver receta / portada"
             >
@@ -680,7 +743,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             {/* Like Button */}
             <button
               onClick={handleLike}
-              className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1.5 font-semibold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
+              className={`flex-1 h-10 rounded-xl flex items-center justify-center gap-1 font-semibold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
                 isCurrentlyLiked
                   ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-zinc-950 font-bold shadow-emerald-500/20'
                   : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
@@ -688,7 +751,18 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               title="Marcar como 'Me interesa' para el sorteo final"
             >
               <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
-              <span>{isCurrentlyLiked ? '¡Me interesa!' : 'Me interesa'}</span>
+              <span>Me interesa</span>
+            </button>
+
+            {/* Direct Select Button */}
+            <button
+              id="btn-direct-choose"
+              onClick={handleDirectSelect}
+              className="px-3 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1 shadow-xs btn-press cursor-pointer transition-colors shrink-0"
+              title="Elegir este plato directamente hoy"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>Elegir</span>
             </button>
           </div>
         )}
@@ -697,20 +771,18 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       {/* FINAL RAFFLE MODAL (WITH 2-SECOND PREPARATION) */}
       <AnimatePresence>
         {isDuelActive && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none touch-none overscroll-none"
+            style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-              className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl text-center space-y-5"
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+              style={{ touchAction: 'none', overscrollBehavior: 'none' }}
             >
-              {/* Sloth chef pattern background */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center opacity-[0.12] dark:opacity-[0.06] pointer-events-none"
-                style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
-              />
-
               {/* Subtle glowing ambient background effect */}
               <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -723,7 +795,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   setIsPreparingRaffle(false);
                   setLikedCards([]);
                 }}
-                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer"
+                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer z-10"
               >
                 <X className="w-4 h-4" />
               </button>

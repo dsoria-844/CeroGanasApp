@@ -99,20 +99,18 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none touch-none overscroll-none"
+        style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-          className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-6 sm:p-8 shadow-2xl text-center space-y-5"
+          className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+          style={{ touchAction: 'none', overscrollBehavior: 'none' }}
         >
-          {/* Sloth chef pattern background */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center opacity-[0.12] dark:opacity-[0.06] pointer-events-none"
-            style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
-          />
-
           {/* Subtle glowing ambient background effect */}
           <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -123,7 +121,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
               sound.playClick(600);
               onClose();
             }}
-            className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer"
+            className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer z-10"
           >
             <X className="w-4 h-4" />
           </button>

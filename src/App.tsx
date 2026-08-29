@@ -42,7 +42,7 @@ export default function App() {
   const [remainingRerolls, setRemainingRerolls] = useState<number>(3);
   
   // Modals
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(true);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isBlindModeOpen, setIsBlindModeOpen] = useState(false);
   const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
@@ -110,10 +110,10 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 pb-10 transition-colors duration-200">
+    <div className="relative min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 pb-8 transition-colors duration-200">
       {/* App Ambient Sloth Pattern Background */}
       <div 
-        className="fixed inset-0 bg-cover bg-center opacity-[0.07] dark:opacity-[0.035] pointer-events-none z-0"
+        className="fixed inset-0 bg-cover bg-center opacity-[0.06] dark:opacity-[0.03] pointer-events-none -z-10"
         style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
       />
       {/* Sidebar Navigation Drawer */}
@@ -140,8 +140,7 @@ export default function App() {
         onNavigateHome={() => setActiveTab('decide')}
         onOpenSidebar={() => setIsSidebarOpen(true)}
         onOpenBlindMode={() => setIsBlindModeOpen(true)}
-        theme={theme}
-        onToggleTheme={handleToggleTheme}
+        onOpenHelp={() => setIsOnboardingOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />

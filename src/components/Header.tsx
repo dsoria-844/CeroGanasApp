@@ -1,7 +1,6 @@
 import React from 'react';
-import { Menu, Zap, Sun, Moon, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Menu, HelpCircle } from 'lucide-react';
 import { AppTab } from '../types';
-import { Theme } from '../utils/theme';
 import { sound } from '../utils/audio';
 
 interface HeaderProps {
@@ -9,8 +8,7 @@ interface HeaderProps {
   onNavigateHome: () => void;
   onOpenSidebar: () => void;
   onOpenBlindMode: () => void;
-  theme: Theme;
-  onToggleTheme: () => void;
+  onOpenHelp: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
 }
@@ -18,14 +16,10 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onOpenSidebar,
-  onOpenBlindMode,
-  theme,
-  onToggleTheme,
-  soundEnabled,
-  onToggleSound,
+  onOpenHelp,
 }) => {
   return (
-    <header className="sticky top-0 z-30 w-full glass-panel px-4 sm:px-8 py-3 transition-colors duration-200">
+    <header className="sticky top-0 z-30 w-full glass-panel px-4 sm:px-8 py-2.5 transition-colors duration-200">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
         {/* Left: Sidebar Menu Trigger & Logo */}
         <div className="flex items-center gap-2">
@@ -79,24 +73,18 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Right Action Controls */}
+        {/* Right Action Controls: Help Guide Trigger */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-
-          {/* Theme Toggle */}
           <button
-            id="btn-header-theme"
+            id="btn-header-help"
             onClick={() => {
-              sound.playClick(600);
-              onToggleTheme();
+              sound.playClick(850);
+              onOpenHelp();
             }}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer transition-colors shadow-xs"
-            title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer transition-colors shadow-2xs"
+            title="Ayuda / Guía rápida"
           >
-            {theme === 'light' ? (
-              <Moon className="w-3.5 h-3.5" />
-            ) : (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-            )}
+            <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </button>
         </div>
       </div>
