@@ -532,15 +532,17 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               key={currentCard.id}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.65}
+              dragElastic={0.6}
               onDragEnd={(_e, info) => {
-                if (info.offset.x > 80 || info.velocity.x > 350) {
-                  handleLike();
-                } else if (info.offset.x < -80 || info.velocity.x < -350) {
-                  handleReject();
+                if (info.offset.x > 50 || info.velocity.x > 250) {
+                  // Swipe right -> Go to PREVIOUS dish (same as left arrow)
+                  handlePrev();
+                } else if (info.offset.x < -50 || info.velocity.x < -250) {
+                  // Swipe left -> Go to NEXT dish (same as right arrow)
+                  handleNext();
                 }
               }}
-              whileDrag={{ scale: 1.02 }}
+              whileDrag={{ scale: 1.01 }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
               className="relative w-full h-full [transform-style:preserve-3d] cursor-grab active:cursor-grabbing touch-pan-y select-none"
