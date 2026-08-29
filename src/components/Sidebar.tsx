@@ -240,10 +240,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                 </button>
               </div>
+            </div>
+
+            {/* Bottom Controls & About Section */}
+            <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
+              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
+                  {theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-zinc-400" />}
+                  <span>Modo {theme === 'light' ? 'Claro' : 'Oscuro'}</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    sound.playClick(600);
+                    onToggleTheme();
+                  }}
+                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
+                >
+                  Cambiar
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
+                  {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-zinc-400" />}
+                  <span>Efectos Sonoros</span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    sound.playClick(soundEnabled ? 400 : 900);
+                    onToggleSound();
+                  }}
+                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
+                >
+                  {soundEnabled ? 'Activado' : 'Silencio'}
+                </button>
+              </div>
 
               {/* Acerca de Section */}
-              <div className="space-y-1.5 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-                <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-3 pb-0.5">
+              <div className="space-y-1 pt-1.5 border-t border-black/[0.06] dark:border-white/[0.06]">
+                <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-1 pb-0.5">
                   Acerca de
                 </p>
 
@@ -280,43 +317,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   </a>
                 </div>
-              </div>
-            </div>
-
-            {/* Bottom Controls (Theme & Sound) */}
-            <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
-              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
-                  {theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-zinc-400" />}
-                  <span>Modo {theme === 'light' ? 'Claro' : 'Oscuro'}</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    sound.playClick(600);
-                    onToggleTheme();
-                  }}
-                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
-                >
-                  Cambiar
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
-                  {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-zinc-400" />}
-                  <span>Efectos Sonoros</span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    sound.playClick(soundEnabled ? 400 : 900);
-                    onToggleSound();
-                  }}
-                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
-                >
-                  {soundEnabled ? 'Activado' : 'Silencio'}
-                </button>
               </div>
             </div>
           </motion.div>
