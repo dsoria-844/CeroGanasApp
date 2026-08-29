@@ -166,13 +166,9 @@ export default function App() {
 
       {/* Top Header */}
       <Header
-        currentMode={activeTab}
         onNavigateHome={() => setActiveTab('decide')}
         onOpenSidebar={() => setIsSidebarOpen(true)}
-        onOpenBlindMode={() => setIsBlindModeOpen(true)}
         onOpenHelp={() => setIsWelcomeOpen(true)}
-        soundEnabled={soundEnabled}
-        onToggleSound={handleToggleSound}
       />
 
       {/* Main Tab Content */}

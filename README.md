@@ -110,9 +110,12 @@ QComo/
 │   │   ├── FavoritesModal.tsx      # Modal y vista de favoritos
 │   │   ├── Header.tsx              # Encabezado principal y navegación rápida
 │   │   ├── HistoryView.tsx         # Historial de comidas aceptadas
+│   │   ├── MealConfirmedModal.tsx  # Modal de confirmación de comida aceptada
+│   │   ├── OnboardingModal.tsx     # Modal de onboarding interactivo
 │   │   ├── RecipeQuickModal.tsx    # Modal de detalle de recetas
 │   │   ├── SettingsView.tsx        # Configuración de sorteo, delivery y tema
 │   │   ├── Sidebar.tsx             # Menú lateral de navegación
+│   │   ├── WelcomeModal.tsx        # Modal de bienvenida con mascota
 │   │   └── WeeklyPlanView.tsx      # Planificador semanal de comidas
 │   ├── utils/              # Audio sintetizado, hápticos, almacenamiento local
 │   ├── types.ts            # Definición centralizada de tipos TypeScript

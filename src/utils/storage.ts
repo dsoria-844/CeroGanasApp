@@ -888,13 +888,14 @@ export function matchRecipesWithPantry(
       matchedIngredients: allMatched,
       missingIngredients: missing,
       missingCount: missingRequired.length,
+      sortingScore,
     });
   }
 
-  // Sort by highest match percentage and least missing ingredients
+  // Sort by highest sorting score (includes recency penalty) and least missing ingredients
   results.sort((a, b) => {
-    if (b.matchPercentage !== a.matchPercentage) {
-      return b.matchPercentage - a.matchPercentage;
+    if (b.sortingScore !== a.sortingScore) {
+      return b.sortingScore - a.sortingScore;
     }
     return a.missingCount - b.missingCount;
   });
@@ -1029,7 +1030,8 @@ export function getUnifiedCardDataset(
     });
   }
 
-  // 3. User Favorites
+  // 3. User Favorites (filtered by exclusions)
+  const lowerExclusions = exclusions.map(e => e.toLowerCase());
   favorites.forEach(f => {
     const isFavCooking = f.source === 'cooking';
     if (
@@ -1037,6 +1039,12 @@ export function getUnifiedCardDataset(
       (modality === 'cooking' && isFavCooking) ||
       (modality === 'delivery' && !isFavCooking)
     ) {
+      // Check if favorite contains excluded ingredients
+      const hasExcluded = f.ingredients.some(ing => 
+        lowerExclusions.includes(ing.toLowerCase())
+      );
+      if (hasExcluded) return;
+
       cards.push({
         id: f.id,
         name: f.name,

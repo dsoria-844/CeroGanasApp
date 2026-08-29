@@ -4,13 +4,9 @@ import { AppTab } from '../types';
 import { sound } from '../utils/audio';
 
 interface HeaderProps {
-  currentMode: AppTab;
   onNavigateHome: () => void;
   onOpenSidebar: () => void;
-  onOpenBlindMode: () => void;
   onOpenHelp: () => void;
-  soundEnabled: boolean;
-  onToggleSound: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({

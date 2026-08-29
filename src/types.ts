@@ -131,6 +131,7 @@ export interface DayPlan {
 export interface MatchResult {
   recipe: Recipe;
   matchPercentage: number;
+  sortingScore: number;
   matchedIngredients: string[];
   missingIngredients: string[];
   missingCount: number;
