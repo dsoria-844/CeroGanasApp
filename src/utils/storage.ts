@@ -27,6 +27,7 @@ const STORAGE_KEYS = {
   FAVORITES: 'que_como_favorites_v1',
   WEEKLY_PLAN: 'que_como_weekly_plan_v1',
   DUEL_THRESHOLD: 'que_como_duel_threshold_v1',
+  DUEL_ENABLED: 'que_como_duel_enabled_v1',
   CUSTOM_MEALS: 'que_como_custom_meals_v1',
   DEFAULT_DELIVERY_APP: 'que_como_default_delivery_app_v1',
   DELETED_MEALS: 'que_como_deleted_meals_v1',
@@ -163,6 +164,26 @@ export function loadDuelThreshold(): number {
 export function saveDuelThreshold(count: number): void {
   try {
     localStorage.setItem(STORAGE_KEYS.DUEL_THRESHOLD, String(count));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadDuelEnabled(): boolean {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.DUEL_ENABLED);
+    if (saved !== null) {
+      return saved === 'true';
+    }
+  } catch {
+    // ignore
+  }
+  return false; // disabled by default
+}
+
+export function saveDuelEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.DUEL_ENABLED, String(enabled));
   } catch {
     // ignore
   }

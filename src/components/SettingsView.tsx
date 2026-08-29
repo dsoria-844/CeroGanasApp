@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   ShieldAlert, 
   Plus, 
@@ -24,6 +25,8 @@ import {
   resetRerollsToMax,
   loadDuelThreshold,
   saveDuelThreshold,
+  loadDuelEnabled,
+  saveDuelEnabled,
   loadDefaultDeliveryApp,
   saveDefaultDeliveryApp,
   DeliveryApp
@@ -57,12 +60,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [customInput, setCustomInput] = useState('');
   const [showClearSuccess, setShowClearSuccess] = useState(false);
   const [duelThreshold, setDuelThreshold] = useState<number>(5);
+  const [isDuelEnabled, setIsDuelEnabled] = useState<boolean>(false);
   const [defaultDeliveryApp, setDefaultDeliveryApp] = useState<DeliveryApp>('pedidosya');
 
   useEffect(() => {
     setDuelThreshold(loadDuelThreshold());
+    setIsDuelEnabled(loadDuelEnabled());
     setDefaultDeliveryApp(loadDefaultDeliveryApp());
   }, []);
+
+  const handleToggleDuelEnabled = () => {
+    sound.playClick(isDuelEnabled ? 500 : 900);
+    triggerHaptic('medium');
+    const newVal = !isDuelEnabled;
+    setIsDuelEnabled(newVal);
+    saveDuelEnabled(newVal);
+  };
 
   const handleSelectThreshold = (count: number) => {
     sound.playClick(850);
@@ -148,7 +161,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </p>
       </div>
 
-      {/* SECCIÓN 1: SORTEO FINAL (CANTIDAD DE OPCIONES) */}
+      {/* SECCIÓN 1: SORTEO FINAL DE COMIDAS */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>
@@ -157,81 +170,119 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <span>Sorteo Final de Comidas</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Cantidad de platos con "Me interesa" necesarios para disparar el sorteo (entre 2 y 20)
+              Sortea automáticamente entre los platos que marcaste con "Me interesa"
             </p>
           </div>
         </div>
 
-        {/* Interactive Stepper & Direct Number Input */}
+        {/* Toggle Switch */}
         <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
           <div className="space-y-0.5">
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-              Platos a acumular
+              Habilitar Sorteo Final
             </span>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Mínimo 2 • Máximo 20 platos
+              {isDuelEnabled
+                ? 'El sorteo se disparará automáticamente al juntar la cantidad de platos indicada'
+                : 'Deshabilitado por defecto (decisión directa o con ¡Tengo Hambre!)'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={duelThreshold <= 2}
-              onClick={() => handleSelectThreshold(Math.max(2, duelThreshold - 1))}
-              className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
-              title="Disminuir"
-            >
-              -
-            </button>
-
-            <input
-              type="number"
-              min={2}
-              max={20}
-              value={duelThreshold}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val)) {
-                  const clamped = Math.min(20, Math.max(2, val));
-                  handleSelectThreshold(clamped);
-                }
-              }}
-              className="w-14 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-center font-extrabold text-base text-zinc-900 dark:text-zinc-100 shadow-2xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
+          <button
+            type="button"
+            onClick={handleToggleDuelEnabled}
+            className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-1 cursor-pointer btn-press shrink-0 ${
+              isDuelEnabled ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-700'
+            }`}
+            title={isDuelEnabled ? 'Desactivar Sorteo Final' : 'Activar Sorteo Final'}
+          >
+            <motion.div
+              animate={{ x: isDuelEnabled ? 20 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              className="w-5 h-5 rounded-full bg-white shadow-md"
             />
-
-            <button
-              type="button"
-              disabled={duelThreshold >= 20}
-              onClick={() => handleSelectThreshold(Math.min(20, duelThreshold + 1))}
-              className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
-              title="Aumentar"
-            >
-              +
-            </button>
-          </div>
+          </button>
         </div>
 
-        {/* Quick presets */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] text-zinc-400 font-semibold mr-1">Atajos rápidos:</span>
-          {[2, 3, 5, 8, 10, 15, 20].map(count => {
-            const isSelected = duelThreshold === count;
-            return (
-              <button
-                key={count}
-                type="button"
-                onClick={() => handleSelectThreshold(count)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all btn-press cursor-pointer border ${
-                  isSelected
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
-                    : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50'
-                }`}
-              >
-                {count} {count === 1 ? 'plato' : 'platos'}
-              </button>
-            );
-          })}
-        </div>
+        {/* Threshold controls (Only visible when Sorteo Final is enabled) */}
+        {isDuelEnabled && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4 pt-1"
+          >
+            {/* Interactive Stepper & Direct Number Input */}
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Platos a acumular
+                </span>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Mínimo 2 • Máximo 20 platos
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={duelThreshold <= 2}
+                  onClick={() => handleSelectThreshold(Math.max(2, duelThreshold - 1))}
+                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
+                  title="Disminuir"
+                >
+                  -
+                </button>
+
+                <input
+                  type="number"
+                  min={2}
+                  max={20}
+                  value={duelThreshold}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val)) {
+                      const clamped = Math.min(20, Math.max(2, val));
+                      handleSelectThreshold(clamped);
+                    }
+                  }}
+                  className="w-14 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-center font-extrabold text-base text-zinc-900 dark:text-zinc-100 shadow-2xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
+                />
+
+                <button
+                  type="button"
+                  disabled={duelThreshold >= 20}
+                  onClick={() => handleSelectThreshold(Math.min(20, duelThreshold + 1))}
+                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
+                  title="Aumentar"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Quick presets */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-zinc-400 font-semibold mr-1">Atajos rápidos:</span>
+              {[2, 3, 5, 8, 10, 15, 20].map(count => {
+                const isSelected = duelThreshold === count;
+                return (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => handleSelectThreshold(count)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all btn-press cursor-pointer border ${
+                      isSelected
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
+                        : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50'
+                    }`}
+                  >
+                    {count} {count === 1 ? 'plato' : 'platos'}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* SECCIÓN 2: APP DE DELIVERY PREDETERMINADA */}

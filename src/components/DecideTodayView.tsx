@@ -41,6 +41,7 @@ import {
   isMealFavorited, 
   createFavoriteFromRecipe, 
   loadDuelThreshold,
+  loadDuelEnabled,
   getDeliverySearchUrl 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
@@ -106,6 +107,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const [rejectedCards, setRejectedCards] = useState<MealCardItem[]>([]);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [duelThreshold, setDuelThreshold] = useState<number>(5);
+  const [isDuelFeatureEnabled, setIsDuelFeatureEnabled] = useState<boolean>(false);
 
   // Sorteo / Duel State
   const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
@@ -121,6 +123,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
   useEffect(() => {
     setDuelThreshold(loadDuelThreshold());
+    setIsDuelFeatureEnabled(loadDuelEnabled());
   }, []);
 
   // Close dropdowns on outside click
@@ -216,8 +219,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     const updatedLikes = isAlreadyLiked ? likedCards : [...likedCards, currentCard];
     setLikedCards(updatedLikes);
 
+    const isFeatureEnabled = loadDuelEnabled();
     const threshold = loadDuelThreshold();
-    if (updatedLikes.length >= threshold) {
+    if (isFeatureEnabled && updatedLikes.length >= threshold) {
       // Trigger Sorteo Final with 2-second preparation
       setDuelOrigin('raffle');
       setIsDuelActive(true);
@@ -362,7 +366,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             <span>¿QUÉ COMEMOS hoy?</span>
           </h2>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-            20 platos al azar • Elige tus preferidos para el sorteo
+            {isDuelFeatureEnabled 
+              ? '20 platos al azar • Elige tus preferidos para el sorteo' 
+              : '20 platos al azar • Descarta, guarda lo que te tiente o elige directo'}
           </p>
         </div>
 
@@ -528,17 +534,19 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             )}
           </div>
 
-          {/* Direct Raffle Button */}
-          <button
-            id="btn-direct-raffle"
-            onClick={handleDirectRaffle}
-            disabled={cardDeck.length === 0}
-            className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
-            title="Sortear entre platos elegidos"
-          >
-            <Dices className="w-3.5 h-3.5" />
-            <span>Sortear ({likedCards.length})</span>
-          </button>
+          {/* Direct Raffle Button (Only when enabled in settings) */}
+          {isDuelFeatureEnabled && (
+            <button
+              id="btn-direct-raffle"
+              onClick={handleDirectRaffle}
+              disabled={cardDeck.length === 0}
+              className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
+              title="Sortear entre platos elegidos"
+            >
+              <Dices className="w-3.5 h-3.5" />
+              <span>Sortear ({likedCards.length})</span>
+            </button>
+          )}
         </div>
 
         {/* 20-Item Micro Indicator Strip */}
