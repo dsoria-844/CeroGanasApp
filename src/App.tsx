@@ -148,7 +148,7 @@ export default function App() {
       />
 
       {/* Main Tab Content */}
-      <main className={`relative z-10 flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 ${activeTab === 'decide' ? 'py-1.5 sm:py-2 flex flex-col justify-center' : 'py-4 sm:py-6'}`}>
+      <main className="relative z-10 flex-1 w-full max-w-4xl mx-auto py-2.5 sm:py-3.5 px-4 sm:px-6">
         <AnimatePresence mode="wait">
           {activeTab === 'decide' && (
             <motion.div

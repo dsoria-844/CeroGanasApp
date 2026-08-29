@@ -109,6 +109,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
   const [duelOrigin, setDuelOrigin] = useState<'raffle' | 'direct'>('raffle');
   const [isPreparingRaffle, setIsPreparingRaffle] = useState<boolean>(false);
+  const [isRaffleRequirementOpen, setIsRaffleRequirementOpen] = useState<boolean>(false);
   const [duelWinner, setDuelWinner] = useState<MealCardItem | null>(null);
   const [isSpinningDuel, setIsSpinningDuel] = useState<boolean>(false);
   const duelTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -307,15 +308,17 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const handleDirectRaffle = () => {
     sound.playClick(900);
     triggerHaptic('medium');
-    const pool = likedCards.length > 0 ? likedCards : cardDeck;
-    if (pool.length === 0) return;
+    if (likedCards.length === 0) {
+      setIsRaffleRequirementOpen(true);
+      return;
+    }
     setDuelOrigin('raffle');
     setIsDuelActive(true);
     setIsPreparingRaffle(true);
 
     setTimeout(() => {
       setIsPreparingRaffle(false);
-      startRaffle(pool);
+      startRaffle(likedCards);
     }, 2000);
   };
 
@@ -484,9 +487,6 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         <div className="flex items-center gap-2 truncate">
           <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
             Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
-          </span>
-          <span className="text-[11px] text-zinc-400 truncate">
-            ({likedCards.length} platos de interés)
           </span>
         </div>
 
@@ -984,6 +984,95 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   )}
                 </motion.div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* NO LIKED CARDS / RAFFLE REQUIREMENT MODAL */}
+      <AnimatePresence>
+        {isRaffleRequirementOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none touch-none overscroll-none"
+            style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+              style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+            >
+              {/* Subtle glowing ambient background effect */}
+              <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  sound.playClick(600);
+                  setIsRaffleRequirementOpen(false);
+                }}
+                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Header Badge */}
+              <div className="flex flex-col items-center justify-center gap-1.5 pt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <span>Sorteo de Platos Elegidos</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
+                  ¡Aún no has elegido platos!
+                </h2>
+              </div>
+
+              {/* Sloth Confused Image */}
+              <div className="relative mx-auto w-44 h-44 sm:w-48 sm:h-48 rounded-2xl overflow-hidden shadow-md border border-black/[0.06] dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center p-2">
+                <img
+                  src="/sloth-confused.jpg"
+                  alt="Perezoso confundido"
+                  className="w-full h-full object-contain filter drop-shadow-sm select-none"
+                />
+              </div>
+
+              {/* Explanation Text */}
+              <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed px-1">
+                <p>
+                  Para realizar este sorteo debes seleccionar al menos <strong>{duelThreshold} platos</strong> con el botón <strong>"Me interesa"</strong> o deslizando hacia la derecha.
+                </p>
+                <p className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-500/20 p-2.5 rounded-xl font-medium">
+                  💡 ¿No deseas elegir platos? Presiona el botón <strong>"¡Tengo Hambre!"</strong> en la barra superior para realizar un sorteo directo inmediato.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => {
+                    sound.playClick(1000);
+                    setIsRaffleRequirementOpen(false);
+                    onOpenBlindMode();
+                  }}
+                  className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
+                >
+                  <Zap className="w-4 h-4 fill-current" />
+                  <span>¡Tengo Hambre! (Sorteo directo)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    sound.playClick(600);
+                    setIsRaffleRequirementOpen(false);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-black/[0.06] dark:border-white/[0.06] btn-press cursor-pointer transition-colors"
+                >
+                  <span>Entendido, seguiré eligiendo platos</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
