@@ -538,12 +538,24 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               key={currentCard.id}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.6}
+              dragElastic={0.7}
               onDragEnd={(_e, info) => {
-                if (info.offset.x > 50 || info.velocity.x > 250) {
+                const swipeThreshold = 110;
+                const fastSwipeThreshold = 75;
+                const velocityThreshold = 500;
+
+                const isRightSwipe = 
+                  info.offset.x > swipeThreshold || 
+                  (info.offset.x > fastSwipeThreshold && info.velocity.x > velocityThreshold);
+
+                const isLeftSwipe = 
+                  info.offset.x < -swipeThreshold || 
+                  (info.offset.x < -fastSwipeThreshold && info.velocity.x < -velocityThreshold);
+
+                if (isRightSwipe) {
                   // Swipe right -> Go to PREVIOUS dish (same as left arrow)
                   handlePrev();
-                } else if (info.offset.x < -50 || info.velocity.x < -250) {
+                } else if (isLeftSwipe) {
                   // Swipe left -> Go to NEXT dish (same as right arrow)
                   handleNext();
                 }
