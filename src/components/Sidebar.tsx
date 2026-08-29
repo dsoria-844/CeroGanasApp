@@ -2,9 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
+  Home,
   Sparkles, 
   ShoppingBag, 
   Calendar, 
+  Heart,
   Star, 
   Settings, 
   History, 
@@ -66,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'decide',
       label: 'Inicio',
-      icon: <Sparkles className="w-4 h-4" />,
+      icon: <Home className="w-4 h-4" />,
     },
     {
       id: 'create_meal',
@@ -86,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'favorites',
       label: 'Mis Favoritos',
-      icon: <Star className="w-4 h-4" />,
+      icon: <Heart className="w-4 h-4" />,
       badge: favoritesCount > 0 ? favoritesCount : undefined,
     },
     {

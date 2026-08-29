@@ -6,11 +6,13 @@ import {
   Check, 
   Clock, 
   RotateCcw,
+  ChevronLeft,
   ChevronRight,
   Utensils,
   Lightbulb,
   Search,
   X,
+  Heart,
   Star,
   Plus,
   Dices
@@ -164,7 +166,19 @@ export const CookMode: React.FC<CookModeProps> = ({
     setSelectedRecipeIndex(0);
     setViewState('results');
     setAcceptedRecipeId(null);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
+
+  // Ensure scroll is immediately reset to top when viewing results
+  useEffect(() => {
+    if (viewState === 'results') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [viewState]);
 
   const handleSpinReadyRoulette = () => {
     if (readyToCookMatches.length === 0) return;
@@ -254,9 +268,9 @@ export const CookMode: React.FC<CookModeProps> = ({
   const isCurrentRecipeFavorited = topMatch ? isMealFavorited(topMatch.recipe.name, favorites) : false;
 
   return (
-    <div className="w-full flex flex-col gap-5 max-w-2xl mx-auto pb-16">
-      {/* Navigation Top Bar */}
-      <div className="flex items-center justify-between">
+    <div className="w-full flex flex-col gap-4 max-w-xl mx-auto pb-24 select-none">
+      {/* Top Header & Actions */}
+      <div className="flex items-center justify-between gap-2 pt-1">
         <button
           id="btn-cook-back"
           onClick={() => {
@@ -267,135 +281,138 @@ export const CookMode: React.FC<CookModeProps> = ({
               onBack();
             }
           }}
-          className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs btn-press cursor-pointer"
+          className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs btn-press cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{viewState === 'results' ? 'Editar despensa' : 'Volver'}</span>
+          <span>{viewState === 'results' ? 'Volver a la despensa' : 'Volver'}</span>
         </button>
 
-        {viewState === 'pantry' ? (
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] px-3 py-1 rounded-full shadow-xs">
-            {pantry.length} seleccionados
-          </span>
-        ) : (
+        {viewState === 'pantry' && (
           <button
+            id="btn-open-custom-ingredient"
             onClick={() => {
-              sound.playClick(750);
-              setViewState('pantry');
+              sound.playClick(800);
+              setIsAddingCustom(prev => !prev);
             }}
-            className="text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] px-3 py-1 rounded-full shadow-xs btn-press cursor-pointer"
+            className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] text-zinc-700 dark:text-zinc-200 text-xs font-semibold flex items-center gap-1.5 shadow-xs btn-press cursor-pointer"
           >
-            <span>Modificar despensa ({pantry.length})</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Agregar ingrediente</span>
           </button>
         )}
       </div>
 
       {/* PANTRY VIEW */}
       {viewState === 'pantry' && (
-        <div className="space-y-5">
-          {/* Header text */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                Cocinar en Casa
-              </h2>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-                Despensa Inteligente • Match por Ingredientes
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                id="btn-open-custom-ingredient"
-                onClick={() => {
-                  sound.playClick(800);
-                  setIsAddingCustom(true);
-                }}
-                className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] text-zinc-700 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 shadow-xs btn-press cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Agregar ingrediente</span>
-              </button>
+        <div className="space-y-3.5">
+          {/* Main Title */}
+          <div>
+            <h2 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              Despensa Inteligente
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+              Toca los ingredientes que tienes para encontrar recetas al instante
+            </p>
+          </div>
 
-              <button
-                id="btn-generate-recipe"
-                onClick={handleGenerate}
-                disabled={pantry.length === 0}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-xs btn-press ${
-                  pantry.length > 0
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 cursor-pointer'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60'
-                }`}
-                title={pantry.length === 0 ? 'Selecciona al menos 1 ingrediente' : 'Ver recetas'}
-              >
-                <ChefHat className="w-3.5 h-3.5" />
-                <span>Ver Recetas ({matchResults.length})</span>
-              </button>
+          {/* Quick Actions & Search */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Buscar ingrediente..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            <button
+              id="btn-select-basics"
+              onClick={selectCommonStaples}
+              className="px-3 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 text-xs font-semibold btn-press cursor-pointer shrink-0 shadow-2xs"
+              title="Marcar ingredientes básicos"
+            >
+              Básicos
+            </button>
+
+            {pantry.length > 0 && (
+              <button
+                id="btn-clear-pantry"
+                onClick={clearPantry}
+                className="p-2 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] text-zinc-400 hover:text-red-500 btn-press cursor-pointer shrink-0 shadow-2xs"
+                title="Limpiar despensa"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Inline Custom Ingredient Form */}
           <AnimatePresence>
             {isAddingCustom && (
               <motion.form
-                initial={{ opacity: 0, scale: 0.95, height: 0 }}
-                animate={{ opacity: 1, scale: 1, height: 'auto' }}
-                exit={{ opacity: 0, scale: 0.95, height: 0 }}
-                transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
                 onSubmit={handleAddCustomItem}
-                className="apple-card p-5 space-y-4 overflow-hidden"
+                className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] space-y-3 shadow-xs"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                    Nuevo Ingrediente
-                  </h3>
+                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                    Nuevo Ingrediente Personalizado
+                  </span>
                   <button
                     type="button"
                     onClick={() => setIsAddingCustom(false)}
-                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white btn-press"
+                    className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-2">
-                    <input
-                      id="input-custom-ingredient-name"
-                      type="text"
-                      value={customItemName}
-                      onChange={e => setCustomItemName(e.target.value)}
-                      placeholder="Nombre del ingrediente..."
-                      autoFocus
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
-
-                  <div>
-                    <select
-                      value={customCategory}
-                      onChange={e => setCustomCategory(e.target.value as PantryCategory)}
-                      className="w-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
-                    >
-                      <option value="proteins">Proteínas</option>
-                      <option value="carbs">Carbohidratos</option>
-                      <option value="veggies">Verduras</option>
-                      <option value="extras">Lácteos & Extras</option>
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    value={customItemName}
+                    onChange={e => setCustomItemName(e.target.value)}
+                    placeholder="Ej. Espinaca, Atún..."
+                    autoFocus
+                    className="sm:col-span-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  />
+                  <select
+                    value={customCategory}
+                    onChange={e => setCustomCategory(e.target.value as PantryCategory)}
+                    className="px-2.5 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none cursor-pointer"
+                  >
+                    <option value="proteins">Proteínas</option>
+                    <option value="carbs">Carbohidratos</option>
+                    <option value="veggies">Verduras</option>
+                    <option value="extras">Lácteos / Extras</option>
+                  </select>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setIsAddingCustom(false)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 btn-press"
+                    className="px-3 py-1 text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={!customItemName.trim()}
-                    className="px-4 py-1.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs btn-press shadow-xs"
+                    className="px-4 py-1 rounded-xl bg-amber-500 text-zinc-950 font-bold text-xs shadow-xs"
                   >
                     Guardar
                   </button>
@@ -403,46 +420,6 @@ export const CookMode: React.FC<CookModeProps> = ({
               </motion.form>
             )}
           </AnimatePresence>
-
-          {/* Quick Actions & Search */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs">
-            <div className="flex items-center gap-2">
-              <button
-                id="btn-select-basics"
-                onClick={selectCommonStaples}
-                className="px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-200 text-xs font-medium btn-press cursor-pointer"
-              >
-                <span>Marcar básicos</span>
-              </button>
-              <button
-                id="btn-clear-pantry"
-                onClick={clearPantry}
-                className="px-3 py-1.5 rounded-full bg-transparent border border-black/[0.08] dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-medium flex items-center gap-1 btn-press cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Limpiar</span>
-              </button>
-            </div>
-
-            <div className="relative w-full sm:w-52">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Buscar en despensa..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-7 py-1.5 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -457,18 +434,18 @@ export const CookMode: React.FC<CookModeProps> = ({
                     sound.playClick(isSelected ? 600 : 750);
                     setActiveTab(tab.id);
                   }}
-                  className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 btn-press cursor-pointer border ${
+                  className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 btn-press cursor-pointer border transition-all ${
                     isSelected
-                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-medium shadow-xs'
-                      : 'bg-white dark:bg-zinc-900/90 border-black/[0.08] dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-bold shadow-xs'
+                      : 'bg-white dark:bg-zinc-900 border-black/[0.08] dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
                 >
                   <span>{tab.label}</span>
                   {count > 0 && (
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
                       isSelected 
-                        ? 'bg-zinc-700 text-white dark:bg-zinc-200 dark:text-zinc-900' 
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                        ? 'bg-amber-500 text-zinc-950' 
+                        : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                     }`}>
                       {count}
                     </span>
@@ -478,16 +455,8 @@ export const CookMode: React.FC<CookModeProps> = ({
             })}
           </div>
 
-          {/* Clean Ingredient Chips Grid */}
-          <div className="apple-card p-5 sm:p-6">
-            <div className="flex items-center justify-between mb-3.5">
-              <h3 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-                {activeTab === 'all' 
-                  ? 'Todos los Ingredientes' 
-                  : CATEGORY_TABS.find(t => t.id === activeTab)?.label} ({filteredPantryItems.length})
-              </h3>
-            </div>
-
+          {/* Ingredients Grid */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs">
             <div className="flex flex-wrap gap-2">
               {filteredPantryItems.map(item => {
                 const isSelected = pantry.includes(item.id);
@@ -496,23 +465,24 @@ export const CookMode: React.FC<CookModeProps> = ({
                     <button
                       id={`btn-pantry-${item.id}`}
                       onClick={() => toggleIngredient(item.id)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1.5 btn-press cursor-pointer border ${
+                      className={`px-3.5 py-2 rounded-2xl text-xs flex items-center gap-2 btn-press cursor-pointer border transition-all ${
                         isSelected
-                          ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-medium shadow-xs'
-                          : 'bg-zinc-50 dark:bg-zinc-900 border-black/[0.06] dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold shadow-sm shadow-amber-500/20'
+                          : 'bg-zinc-50 dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium'
                       }`}
                     >
+                      <span className="text-sm">{item.emoji || '🥘'}</span>
                       <span>{item.name}</span>
-                      {isSelected ? (
-                        <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
-                      ) : null}
+                      {isSelected && (
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      )}
                     </button>
 
                     {!item.isCommon && (
                       <button
                         onClick={e => handleDeleteCustomItem(item.id, e)}
                         title="Eliminar ingrediente"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-1 -right-1 w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 border border-black/[0.08] dark:border-zinc-700 text-zinc-500 hover:text-red-500 flex items-center justify-center text-[10px] shadow-xs cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-1 -right-1 w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 hover:text-red-500 flex items-center justify-center text-[10px] shadow-xs cursor-pointer"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -523,156 +493,246 @@ export const CookMode: React.FC<CookModeProps> = ({
             </div>
           </div>
 
-          {/* Match Banner */}
+          {/* Sticky Floating Bottom Bar with Match Results */}
           {pantry.length > 0 && (
-            <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-xs">
-              <div>
-                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  {readyToCookMatches.length > 0
-                    ? `Tienes ${readyToCookMatches.length} ${readyToCookMatches.length === 1 ? 'receta' : 'recetas'} listas al 100%`
-                    : almostReadyMatches.length > 0
-                    ? `${almostReadyMatches.length} recetas con más del 70% de ingredientes`
-                    : 'Descubre qué puedes preparar con tu despensa'}
-                </p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {readyToCookMatches.length} al 100% • {almostReadyMatches.length} al 70%+
-                </p>
+            <div className="fixed bottom-3 left-4 right-4 max-w-xl mx-auto z-40 p-2.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex items-center justify-between gap-2">
+              <div className="pl-2">
+                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50 block">
+                  {matchResults.length} {matchResults.length === 1 ? 'receta posible' : 'recetas posibles'}
+                </span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  {readyToCookMatches.length} listas al 100%
+                </span>
               </div>
 
-              {readyToCookMatches.length > 0 && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                {readyToCookMatches.length > 0 && (
+                  <button
+                    onClick={() => {
+                      handleGenerate();
+                      setTimeout(() => handleSpinReadyRoulette(), 250);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer"
+                    title="Sortear entre recetas al 100%"
+                  >
+                    <Dices className="w-3.5 h-3.5" />
+                    <span>Sortear</span>
+                  </button>
+                )}
+
                 <button
-                  id="btn-spin-100-roulette-pantry"
-                  onClick={() => {
-                    handleGenerate();
-                    setTimeout(() => handleSpinReadyRoulette(), 300);
-                  }}
-                  className="px-3.5 py-1.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium text-xs flex items-center gap-1.5 btn-press cursor-pointer shrink-0 shadow-xs"
+                  id="btn-generate-recipe"
+                  onClick={handleGenerate}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer"
                 >
-                  <Dices className="w-3.5 h-3.5" />
-                  <span>Sortear ({readyToCookMatches.length})</span>
+                  <ChefHat className="w-4 h-4" />
+                  <span>Ver Recetas ({matchResults.length})</span>
                 </button>
-              )}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* RESULTS VIEW */}
+      {/* RESULTS VIEW WITH CAROUSEL */}
       {viewState === 'results' && topMatch && (
-        <div className="space-y-5">
-          {/* Main Recipe Card */}
-          <div className="apple-card p-6 sm:p-7 space-y-5">
-            {/* Header info */}
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-                    {topMatch.recipe.category}
-                  </span>
-                  <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
-                    <Clock className="w-3 h-3" />
-                    {topMatch.recipe.prepTime + topMatch.recipe.cookTime} min
-                  </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
-                    {topMatch.recipe.difficulty}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  {topMatch.recipe.name}
-                </h3>
-              </div>
-
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-3xl shadow-xs shrink-0">
-                  {topMatch.recipe.imageEmoji}
-                </div>
-
-                <button
-                  id="btn-toggle-favorite-recipe"
-                  onClick={() => handleToggleFavorite(topMatch)}
-                  className="p-1.5 rounded-full text-zinc-400 hover:text-amber-500 transition-colors btn-press cursor-pointer"
-                  title="Guardar en favoritos"
-                >
-                  <Star className={`w-4 h-4 ${isCurrentRecipeFavorited ? 'fill-amber-400 text-amber-400' : ''}`} />
-                </button>
-              </div>
+        <div className="space-y-4">
+          {/* Carousel Header & Counter */}
+          <div className="p-3 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-950 shadow-xs">
+                {selectedRecipeIndex + 1} / {matchResults.length}
+              </span>
+              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                {topMatch.matchPercentage === 100 ? '⭐ 100% de ingredientes' : `${topMatch.matchPercentage}% de ingredientes`}
+              </span>
             </div>
 
-            {/* Ingredients Analysis */}
-            <div className="space-y-2.5 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold flex items-center justify-between">
-                <span>Ingredientes ({topMatch.recipe.allIngredientsFormatted.length})</span>
-                <span className="text-[11px] text-zinc-400 font-normal">
-                  {topMatch.matchedIngredients.length} disponibles
-                </span>
-              </h4>
+            {/* Navigation Arrows */}
+            <div className="flex items-center gap-1.5">
+              <button
+                id="btn-prev-recipe"
+                onClick={() => {
+                  if (selectedRecipeIndex > 0) {
+                    sound.playClick(750);
+                    triggerHaptic('light');
+                    setSelectedRecipeIndex(prev => prev - 1);
+                  }
+                }}
+                disabled={selectedRecipeIndex === 0}
+                className="p-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
+                title="Receta anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {topMatch.recipe.allIngredientsFormatted.map((ing, idx) => {
-                  const isAvailable = pantry.includes(ing.id);
-                  return (
-                    <div
-                      key={idx}
-                      className={`flex items-center justify-between p-2.5 rounded-xl border text-xs ${
-                        isAvailable
-                          ? 'bg-zinc-50 dark:bg-zinc-900 border-black/[0.06] dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200'
-                          : 'bg-zinc-50/40 dark:bg-zinc-900/40 border-black/[0.04] dark:border-white/[0.04] text-zinc-400'
-                      }`}
-                    >
-                      <span className="truncate font-medium">{ing.name}</span>
-                      <span className={`text-[10px] px-2 py-0.2 rounded-full font-medium ${
-                        isAvailable 
-                          ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' 
-                          : 'text-zinc-400'
-                      }`}>
-                        {isAvailable ? '✓ Disponible' : 'Falta'}
+              <button
+                id="btn-next-recipe"
+                onClick={() => {
+                  if (selectedRecipeIndex < matchResults.length - 1) {
+                    sound.playClick(850);
+                    triggerHaptic('light');
+                    setSelectedRecipeIndex(prev => prev + 1);
+                  }
+                }}
+                disabled={selectedRecipeIndex === matchResults.length - 1}
+                className="p-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
+                title="Siguiente receta"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Recipe Card with Swipe */}
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={topMatch.recipe.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.6}
+                onDragEnd={(_e, info) => {
+                  if (info.offset.x > 80 || info.velocity.x > 400) {
+                    if (selectedRecipeIndex > 0) {
+                      sound.playClick(750);
+                      triggerHaptic('light');
+                      setSelectedRecipeIndex(prev => prev - 1);
+                    }
+                  } else if (info.offset.x < -80 || info.velocity.x < -400) {
+                    if (selectedRecipeIndex < matchResults.length - 1) {
+                      sound.playClick(850);
+                      triggerHaptic('light');
+                      setSelectedRecipeIndex(prev => prev + 1);
+                    }
+                  }
+                }}
+                className="apple-card p-6 sm:p-7 space-y-5 cursor-grab active:cursor-grabbing touch-pan-y"
+              >
+                {/* Header info */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                        {topMatch.recipe.category}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                        <Clock className="w-3 h-3" />
+                        {topMatch.recipe.prepTime + topMatch.recipe.cookTime} min
+                      </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                        {topMatch.recipe.difficulty}
+                      </span>
+                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        {topMatch.matchPercentage}% Coincidencia
                       </span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Step-by-Step Instructions */}
-            <div className="space-y-2.5 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-                Preparación en 3 Pasos
-              </h4>
-
-              <div className="space-y-2">
-                {topMatch.recipe.steps.map((step, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.06]"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
-                      {idx + 1}
-                    </div>
-                    <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                      {step}
-                    </p>
+                    <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                      {topMatch.recipe.name}
+                    </h3>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Action */}
-            <div className="pt-2">
-              {acceptedRecipeId === topMatch.recipe.id ? (
-                <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-zinc-900 dark:text-zinc-100 font-medium text-xs">
-                  Receta confirmada y guardada en tu historial
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-3xl shadow-xs shrink-0">
+                      {topMatch.recipe.imageEmoji}
+                    </div>
+
+                    <button
+                      id="btn-toggle-favorite-recipe"
+                      onClick={() => handleToggleFavorite(topMatch)}
+                      className={`p-2 rounded-full border transition-all btn-press cursor-pointer ${
+                        isCurrentRecipeFavorited
+                          ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm'
+                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-black/[0.06] dark:border-white/[0.06]'
+                      }`}
+                      title={isCurrentRecipeFavorited ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                    >
+                      <Heart className={`w-4 h-4 ${isCurrentRecipeFavorited ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <button
-                  id="btn-cook-accept-main"
-                  onClick={() => handleAcceptRecipe(topMatch)}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-sm flex items-center justify-center gap-2 shadow-md btn-press cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Cocinaré esto hoy</span>
-                </button>
-              )}
-            </div>
+
+                {/* Ingredients Analysis */}
+                <div className="space-y-2.5 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold flex items-center justify-between">
+                    <span>Ingredientes ({topMatch.recipe.allIngredientsFormatted.length})</span>
+                    <span className="text-[11px] text-zinc-400 font-normal">
+                      {topMatch.matchedIngredients.length} disponibles
+                    </span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {topMatch.recipe.allIngredientsFormatted.map((ing, idx) => {
+                      const isAvailable = pantry.includes(ing.id);
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs ${
+                            isAvailable
+                              ? 'bg-zinc-50 dark:bg-zinc-900 border-black/[0.06] dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200'
+                              : 'bg-zinc-50/40 dark:bg-zinc-900/40 border-black/[0.04] dark:border-white/[0.04] text-zinc-400'
+                          }`}
+                        >
+                          <span className="truncate font-medium">{ing.name}</span>
+                          <span className={`text-[10px] px-2 py-0.2 rounded-full font-medium ${
+                            isAvailable 
+                              ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' 
+                              : 'text-zinc-400'
+                          }`}>
+                            {isAvailable ? '✓ Disponible' : 'Falta'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Step-by-Step Instructions */}
+                <div className="space-y-2.5 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
+                    Preparación en 3 Pasos
+                  </h4>
+
+                  <div className="space-y-2">
+                    {topMatch.recipe.steps.map((step, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.06]"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                          {idx + 1}
+                        </div>
+                        <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                          {step}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action */}
+                <div className="pt-2">
+                  {acceptedRecipeId === topMatch.recipe.id ? (
+                    <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-zinc-900 dark:text-zinc-100 font-medium text-xs">
+                      Receta confirmada y guardada en tu historial
+                    </div>
+                  ) : (
+                    <button
+                      id="btn-cook-accept-main"
+                      onClick={() => handleAcceptRecipe(topMatch)}
+                      className="w-full py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 btn-press cursor-pointer"
+                    >
+                      <Check className="w-4 h-4 stroke-[3]" />
+                      <span>Cocinaré esto hoy</span>
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
       )}

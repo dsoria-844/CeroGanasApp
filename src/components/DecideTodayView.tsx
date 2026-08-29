@@ -333,7 +333,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-2.5 sm:space-y-3 pb-1 select-none">
+    <div className="w-full max-w-md mx-auto space-y-2.5 sm:space-y-3 pb-1 select-none overscroll-contain">
       {/* TOP BAR: Title & Tengo Hambre */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <div>
@@ -508,7 +508,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       </div>
 
       {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
-      <div className="relative w-full h-[415px] sm:h-[440px] min-h-[390px] max-h-[450px] flex items-center justify-center overflow-hidden rounded-3xl">
+      <div className="relative w-full h-[450px] sm:h-[475px] min-h-[420px] max-h-[490px] flex items-center justify-center overflow-hidden rounded-3xl">
         {/* Previous Arrow Button */}
         <button
           onClick={handlePrev}
@@ -528,7 +528,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           <ChevronRight className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* The Card with Horizontal Swipe / Drag Support */}
+        {/* The Card with 3D Flip */}
         {currentCard ? (
           <div 
             onClick={handleToggleFlip}
@@ -536,34 +536,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           >
             <motion.div
               key={currentCard.id}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.7}
-              onDragEnd={(_e, info) => {
-                const swipeThreshold = 110;
-                const fastSwipeThreshold = 75;
-                const velocityThreshold = 500;
-
-                const isRightSwipe = 
-                  info.offset.x > swipeThreshold || 
-                  (info.offset.x > fastSwipeThreshold && info.velocity.x > velocityThreshold);
-
-                const isLeftSwipe = 
-                  info.offset.x < -swipeThreshold || 
-                  (info.offset.x < -fastSwipeThreshold && info.velocity.x < -velocityThreshold);
-
-                if (isRightSwipe) {
-                  // Swipe right -> Go to PREVIOUS dish (same as left arrow)
-                  handlePrev();
-                } else if (isLeftSwipe) {
-                  // Swipe left -> Go to NEXT dish (same as right arrow)
-                  handleNext();
-                }
-              }}
-              whileDrag={{ scale: 1.01 }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-              className="relative w-full h-full [transform-style:preserve-3d] cursor-grab active:cursor-grabbing touch-pan-y select-none"
+              className="relative w-full h-full [transform-style:preserve-3d] select-none"
             >
               {/* FRONT FACE (PORTADA) */}
               <div 

@@ -128,6 +128,13 @@ export default function App() {
     setViewingRecipe(recipe);
   };
 
+  // Ensure scroll is immediately reset to top on tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
+
   return (
     <div className={`relative ${activeTab === 'decide' ? 'min-h-screen md:h-screen md:overflow-hidden pb-0' : 'min-h-screen pb-8'} bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 transition-colors duration-200`}>
       {/* Sidebar Navigation Drawer */}

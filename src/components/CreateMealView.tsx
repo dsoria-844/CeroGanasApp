@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Plus, 
   ChefHat, 
@@ -100,6 +100,13 @@ export const CreateMealView: React.FC = () => {
 
   // Notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const formScrollRef = useRef<HTMLFormElement | null>(null);
+
+  useEffect(() => {
+    if (isFormOpen && formScrollRef.current) {
+      formScrollRef.current.scrollTop = 0;
+    }
+  }, [isFormOpen]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -491,8 +498,18 @@ export const CreateMealView: React.FC = () => {
 
       {/* MODAL 1: CREATE / EDIT FORM (MOBILE-FIRST COMPACT REDESIGN) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md overflow-hidden select-none">
-          <div className="relative w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex flex-col overflow-hidden">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsFormOpen(false);
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md overflow-hidden select-none overscroll-none touch-none"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex flex-col overflow-hidden overscroll-contain touch-auto"
+          >
             
             {/* Modal Header */}
             <div className="p-4 sm:p-5 pb-3 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 shrink-0">
@@ -545,7 +562,7 @@ export const CreateMealView: React.FC = () => {
             </div>
 
             {/* Scrollable Form Body */}
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+            <form ref={formScrollRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
               {/* Row 1: Nombre + Emoji */}
               <div className="flex items-center gap-2">
                 <div className="flex-1 space-y-1">
@@ -781,8 +798,18 @@ export const CreateMealView: React.FC = () => {
 
       {/* MODAL 2: DETAIL PREVIEW */}
       {previewMeal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 space-y-4 shadow-2xl">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewMeal(null);
+          }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-hidden overscroll-none touch-none"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 space-y-4 shadow-2xl overscroll-contain touch-auto"
+          >
             <button
               onClick={() => setPreviewMeal(null)}
               className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer"

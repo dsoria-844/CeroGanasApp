@@ -53,18 +53,12 @@ export const Header: React.FC<HeaderProps> = ({
               className="text-xl sm:text-2xl font-extrabold tracking-wide flex items-center gap-1.5 select-none"
               style={{ fontFamily: "'Bubblegum Sans', 'Fredoka', cursive, sans-serif" }}
             >
-              <span 
-                style={{ 
-                  color: '#FDF5E7',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,0.9)'
-                }}
-              >
+              <span className="text-zinc-900 dark:text-zinc-50">
                 Cero
               </span>
               <span 
                 style={{ 
-                  color: '#FDC305',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.45)'
+                  color: '#f59e0b'
                 }}
               >
                 Ganas
