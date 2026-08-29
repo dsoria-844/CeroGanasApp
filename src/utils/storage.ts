@@ -732,6 +732,86 @@ export function createFavoriteFromRecipe(recipe: Recipe): UserFavoriteMeal {
   };
 }
 
+export interface PreloadedMealCatalogItem {
+  id: string;
+  name: string;
+  category: 'cheat_meal' | 'typical' | 'healthy' | 'economic';
+  priceLevel?: '$' | '$$' | '$$$';
+  deliveryTime?: string;
+  tags: string[];
+  ingredients: string[];
+  imageEmoji: string;
+  caloriesApprox?: string;
+  vibe?: string;
+  description?: string;
+  source: 'cooking' | 'delivery';
+  originalItem: Recipe | DeliveryOption;
+}
+
+export function getAllPreloadedMeals(): PreloadedMealCatalogItem[] {
+  const customMeals = loadCustomMeals();
+  const allDelivery = [...DELIVERY_DATASET, ...customMeals.delivery];
+  const allRecipes = [...RECIPES_DATASET, ...customMeals.recipes];
+  
+  const results: PreloadedMealCatalogItem[] = [];
+  const seenNames = new Set<string>();
+
+  for (const recipe of allRecipes) {
+    const key = recipe.name.toLowerCase().trim();
+    if (!seenNames.has(key)) {
+      seenNames.add(key);
+      results.push({
+        id: recipe.id,
+        name: recipe.name,
+        category: recipe.category === 'Pollo' || recipe.category === 'Pescado' || recipe.category === 'Vegetariano'
+          ? 'healthy'
+          : 'typical',
+        deliveryTime: `${recipe.prepTime + recipe.cookTime} min`,
+        tags: [recipe.category, recipe.difficulty],
+        ingredients: recipe.requiredIngredients,
+        imageEmoji: recipe.imageEmoji || '🍳',
+        caloriesApprox: recipe.caloriesApprox,
+        vibe: recipe.chefTip || 'Receta casera',
+        description: recipe.steps[0],
+        source: 'cooking',
+        originalItem: recipe,
+      });
+    }
+  }
+
+  for (const delivery of allDelivery) {
+    const key = delivery.name.toLowerCase().trim();
+    if (!seenNames.has(key)) {
+      seenNames.add(key);
+      results.push({
+        id: delivery.id,
+        name: delivery.name,
+        category: delivery.category,
+        priceLevel: delivery.priceLevel,
+        deliveryTime: delivery.deliveryTime,
+        tags: delivery.tags,
+        ingredients: delivery.ingredients,
+        imageEmoji: delivery.imageEmoji || '🛵',
+        caloriesApprox: delivery.caloriesApprox,
+        vibe: delivery.vibe,
+        description: delivery.description,
+        source: 'delivery',
+        originalItem: delivery,
+      });
+    }
+  }
+
+  return results;
+}
+
+export function createFavoriteFromCatalogItem(item: PreloadedMealCatalogItem): UserFavoriteMeal {
+  if (item.source === 'cooking') {
+    return createFavoriteFromRecipe(item.originalItem as Recipe);
+  } else {
+    return createFavoriteFromDeliveryOption(item.originalItem as DeliveryOption);
+  }
+}
+
 export function addFavoriteMeal(meal: UserFavoriteMeal): UserFavoriteMeal[] {
   const current = loadFavorites();
   // Check if duplicate name
