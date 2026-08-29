@@ -172,10 +172,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       key={item.id}
                       onClick={() => handleNav(item.id)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all btn-press cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all btn-press cursor-pointer ${
                         isActive
-                          ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
-                          : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
+                          ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md shadow-amber-500/20'
+                          : 'text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
@@ -184,9 +184,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
 
                       {item.badge !== undefined && (
-                        <span className={`px-2 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
                           isActive
-                            ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-white'
+                            ? 'bg-zinc-950/15 text-zinc-950'
                             : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
                         }`}>
                           {item.badge}
