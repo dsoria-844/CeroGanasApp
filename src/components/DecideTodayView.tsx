@@ -494,10 +494,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           onClick={handleDirectRaffle}
           disabled={cardDeck.length === 0}
           className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
-          title="Sortear directamente ahora"
+          title="Sortear entre platos elegidos"
         >
           <Dices className="w-3.5 h-3.5" />
-          <span>{likedCards.length > 0 ? `Sortear (${likedCards.length})` : 'Sortear ya'}</span>
+          <span>Sortear entre platos elegidos</span>
         </button>
       </div>
 
@@ -522,16 +522,28 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           <ChevronRight className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* The Card */}
+        {/* The Card with Horizontal Swipe / Drag Support */}
         {currentCard ? (
           <div 
             onClick={handleToggleFlip}
             className="w-full h-full cursor-pointer [perspective:1000px]"
           >
             <motion.div
+              key={currentCard.id}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.65}
+              onDragEnd={(_e, info) => {
+                if (info.offset.x > 80 || info.velocity.x > 350) {
+                  handleLike();
+                } else if (info.offset.x < -80 || info.velocity.x < -350) {
+                  handleReject();
+                }
+              }}
+              whileDrag={{ scale: 1.02 }}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-              className="relative w-full h-full [transform-style:preserve-3d]"
+              className="relative w-full h-full [transform-style:preserve-3d] cursor-grab active:cursor-grabbing touch-pan-y select-none"
             >
               {/* FRONT FACE (PORTADA) */}
               <div 
@@ -784,12 +796,18 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none isolate"
               style={{ touchAction: 'none', overscrollBehavior: 'none' }}
             >
+              {/* Sloth Background Pattern in the back */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-[0.08] dark:opacity-[0.04] pointer-events-none -z-10"
+                style={{ backgroundImage: "url('/modal-bg-sloths.jpg')" }}
+              />
+
               {/* Subtle glowing ambient background effect */}
-              <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 
               {/* Close */}
               <button
