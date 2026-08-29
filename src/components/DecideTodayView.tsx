@@ -24,7 +24,8 @@ import {
   Clock,
   RefreshCw,
   ShoppingBag,
-  Dices
+  Dices,
+  Info
 } from 'lucide-react';
 import { 
   MealCardItem, 
@@ -483,7 +484,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
           </span>
           <span className="text-[11px] text-zinc-400 truncate">
-            {likedCards.length} me interesa
+            ({likedCards.length} platos de interés)
           </span>
         </div>
 
@@ -555,9 +556,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                         handleToggleFlip();
                       }}
                       className="p-2 rounded-full border border-black/[0.06] dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all btn-press cursor-pointer"
-                      title="Ver receta o ingredientes"
+                      title="Ver información y receta"
                     >
-                      <RotateCw className="w-3.5 h-3.5" />
+                      <Info className="w-3.5 h-3.5" />
                     </button>
 
                     <button
@@ -654,7 +655,11 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           Ingredientes
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {currentCard.recipe.ingredients.map((ing, i) => (
+                          {(
+                            currentCard.recipe.allIngredientsFormatted?.map(ing => ing.name) ||
+                            currentCard.ingredientsSummary ||
+                            []
+                          ).map((ing, i) => (
                             <span key={i} className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 border border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300">
                               {ing}
                             </span>
@@ -667,7 +672,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           Pasos de Cocina
                         </p>
                         <div className="space-y-1.5">
-                          {currentCard.recipe.instructions.slice(0, 3).map((step, i) => (
+                          {(currentCard.recipe.steps || []).slice(0, 3).map((step, i) => (
                             <div key={i} className="flex items-start gap-2 text-xs text-zinc-700 dark:text-zinc-300">
                               <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                                 {i + 1}
