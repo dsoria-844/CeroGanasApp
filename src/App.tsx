@@ -10,6 +10,7 @@ import { HistoryView } from './components/HistoryView';
 import { CreateMealView } from './components/CreateMealView';
 import { BlindModeModal } from './components/BlindModeModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { MealConfirmedModal } from './components/MealConfirmedModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
 import { FavoritesModal } from './components/FavoritesModal';
@@ -47,6 +48,11 @@ export default function App() {
   const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
+  const [acceptedMealConfirmation, setAcceptedMealConfirmation] = useState<{
+    name: string;
+    emoji: string;
+    type: 'delivery' | 'cooking';
+  } | null>(null);
 
   // Initialize Theme and Storage state
   useEffect(() => {
@@ -83,6 +89,7 @@ export default function App() {
   ) => {
     const updatedHistory = addMealToHistory(name, type, emoji, details);
     setHistory(updatedHistory);
+    setAcceptedMealConfirmation({ name, emoji, type });
   };
 
   const handleDeleteHistoryItem = (id: string) => {
@@ -334,6 +341,17 @@ export default function App() {
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
+      />
+
+      {/* Meal Confirmed / Order Accepted Success Modal */}
+      <MealConfirmedModal
+        isOpen={acceptedMealConfirmation !== null}
+        meal={acceptedMealConfirmation}
+        onClose={() => setAcceptedMealConfirmation(null)}
+        onViewHistory={() => {
+          setAcceptedMealConfirmation(null);
+          setActiveTab('history');
+        }}
       />
     </div>
   );
