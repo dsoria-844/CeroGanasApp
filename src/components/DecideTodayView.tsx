@@ -103,6 +103,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const [cardDeck, setCardDeck] = useState<MealCardItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [likedCards, setLikedCards] = useState<MealCardItem[]>([]);
+  const [rejectedCards, setRejectedCards] = useState<MealCardItem[]>([]);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [duelThreshold, setDuelThreshold] = useState<number>(5);
 
@@ -146,6 +147,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     setIsFlipped(false);
     if (resetLikes) {
       setLikedCards([]);
+      setRejectedCards([]);
     }
   };
 
@@ -188,8 +190,16 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     if (!currentCard) return;
     sound.playTick(450);
     triggerHaptic('light');
-    // If it was previously liked, remove it
+    
+    // Remove from liked if it was liked
     setLikedCards(prev => prev.filter(c => c.id !== currentCard.id));
+    
+    // Toggle rejection or add to rejected
+    setRejectedCards(prev => {
+      if (prev.some(c => c.id === currentCard.id)) return prev;
+      return [...prev, currentCard];
+    });
+    
     handleNext();
   };
 
@@ -197,6 +207,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     if (!currentCard) return;
     sound.playClick(950);
     triggerHaptic('success');
+
+    // Remove from rejected if it was rejected
+    setRejectedCards(prev => prev.filter(c => c.id !== currentCard.id));
 
     // Add to likedCards if not already present
     const isAlreadyLiked = likedCards.some(c => c.id === currentCard.id);
@@ -327,7 +340,15 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   };
 
   const isFavorited = currentCard ? isMealFavorited(currentCard.name, favorites) : false;
-  const isCurrentlyLiked = currentCard ? likedCards.some(c => c.id === currentCard.id) : false;
+  
+  const getCardStatus = (cardId: string): 'liked' | 'rejected' | 'pending' => {
+    if (likedCards.some(c => c.id === cardId)) return 'liked';
+    if (rejectedCards.some(c => c.id === cardId)) return 'rejected';
+    return 'pending';
+  };
+  const currentCardStatus = currentCard ? getCardStatus(currentCard.id) : 'pending';
+  const isCurrentlyLiked = currentCardStatus === 'liked';
+  const isCurrentlyRejected = currentCardStatus === 'rejected';
 
   const currentModalityLabel = MODALITIES.find(m => m.id === selectedModality)?.label || 'Modalidad';
   const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
@@ -486,25 +507,72 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         </div>
       </div>
 
-      {/* PROGRESS TRACKER & DIRECT RAFFLE BUTTON */}
-      <div className="apple-card p-2.5 sm:p-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 truncate">
-          <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
-          </span>
+      {/* PROGRESS TRACKER & 20-CARD INDICATORS */}
+      <div className="apple-card p-2.5 sm:p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+            <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+              Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
+            </span>
+            {likedCards.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-500/30 flex items-center gap-1">
+                <Heart className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+                <span>{likedCards.length}</span>
+              </span>
+            )}
+            {rejectedCards.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 text-[11px] font-bold border border-rose-500/30 flex items-center gap-1">
+                <X className="w-3 h-3 text-rose-500 stroke-[3]" />
+                <span>{rejectedCards.length}</span>
+              </span>
+            )}
+          </div>
+
+          {/* Direct Raffle Button */}
+          <button
+            id="btn-direct-raffle"
+            onClick={handleDirectRaffle}
+            disabled={cardDeck.length === 0}
+            className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
+            title="Sortear entre platos elegidos"
+          >
+            <Dices className="w-3.5 h-3.5" />
+            <span>Sortear ({likedCards.length})</span>
+          </button>
         </div>
 
-        {/* Direct Raffle Button */}
-        <button
-          id="btn-direct-raffle"
-          onClick={handleDirectRaffle}
-          disabled={cardDeck.length === 0}
-          className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
-          title="Sortear entre platos elegidos"
-        >
-          <Dices className="w-3.5 h-3.5" />
-          <span>Sortear entre platos elegidos</span>
-        </button>
+        {/* 20-Item Micro Indicator Strip */}
+        {cardDeck.length > 0 && (
+          <div className="flex items-center justify-between gap-1 pt-0.5">
+            {cardDeck.map((c, idx) => {
+              const status = getCardStatus(c.id);
+              const isCurrent = idx === currentIndex;
+              return (
+                <button
+                  key={c.id || idx}
+                  onClick={() => {
+                    sound.playClick(700);
+                    triggerHaptic('light');
+                    setIsFlipped(false);
+                    setCurrentIndex(idx);
+                  }}
+                  className={`h-2 flex-1 rounded-full transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'ring-2 ring-zinc-900 dark:ring-white scale-y-125 z-10'
+                      : 'opacity-80 hover:opacity-100'
+                  } ${
+                    status === 'liked'
+                      ? 'bg-emerald-500'
+                      : status === 'rejected'
+                      ? 'bg-rose-500'
+                      : 'bg-zinc-200 dark:bg-zinc-700'
+                  }`}
+                  title={`Plato ${idx + 1}: ${c.name} (${status === 'liked' ? 'Me interesa' : status === 'rejected' ? 'Descartado' : 'Sin decidir'})`}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
@@ -542,19 +610,49 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             >
               {/* FRONT FACE (PORTADA) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
+                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden] transition-all duration-300 ${
+                  currentCardStatus === 'liked'
+                    ? 'bg-white dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
+                    : currentCardStatus === 'rejected'
+                    ? 'bg-white dark:bg-zinc-900 border-2 border-rose-500/70 shadow-rose-500/10'
+                    : 'bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1]'
+                }`}
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
-                {/* Top Badge & Favorite Button */}
-                <div className="flex items-center justify-between">
-                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 ${
-                    currentCard.type === 'cooking'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
-                      : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
-                  }`}>
-                    {currentCard.type === 'cooking' ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
-                    <span>{currentCard.type === 'cooking' ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
-                  </span>
+                {/* Subtle Ambient status wash background */}
+                {currentCardStatus === 'liked' && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
+                )}
+                {currentCardStatus === 'rejected' && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-rose-500/10 via-transparent to-transparent pointer-events-none" />
+                )}
+
+                {/* Top Badges & Status & Favorite Button */}
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={`text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 ${
+                      currentCard.type === 'cooking'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+                    }`}>
+                      {currentCard.type === 'cooking' ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
+                      <span>{currentCard.type === 'cooking' ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
+                    </span>
+
+                    {/* Status Pill */}
+                    {currentCardStatus === 'liked' && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 animate-in fade-in">
+                        <Check className="w-3 h-3 stroke-[3] text-emerald-600 dark:text-emerald-400" />
+                        <span>Te interesa</span>
+                      </span>
+                    )}
+                    {currentCardStatus === 'rejected' && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40 flex items-center gap-1 animate-in fade-in">
+                        <X className="w-3 h-3 stroke-[3] text-rose-600 dark:text-rose-400" />
+                        <span>Descartado</span>
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex items-center gap-1.5">
                     <button
@@ -586,7 +684,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 </div>
 
                 {/* Dish Center Info */}
-                <div className="flex flex-col items-center justify-center text-center my-auto py-2">
+                <div className="flex flex-col items-center justify-center text-center my-auto py-2 relative z-10">
                   <div className="text-7xl mb-3 filter drop-shadow-md select-none transform hover:scale-105 transition-transform">
                     {currentCard.imageEmoji}
                   </div>
@@ -619,7 +717,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 </div>
 
                 {/* Bottom hint */}
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 font-medium">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 font-medium relative z-10">
                   <RotateCw className="w-3 h-3" />
                   <span>Toca para ver receta e ingredientes</span>
                 </div>
@@ -627,7 +725,13 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
               {/* BACK FACE (RECETA / DETALLES) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [transform:rotateY(180deg)] [backface-visibility:hidden]"
+                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [transform:rotateY(180deg)] [backface-visibility:hidden] transition-all duration-300 ${
+                  currentCardStatus === 'liked'
+                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
+                    : currentCardStatus === 'rejected'
+                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-rose-500/70 shadow-rose-500/10'
+                    : 'bg-zinc-50 dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1]'
+                }`}
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
                 <div className="space-y-4">
@@ -744,25 +848,29 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             {/* Reject Button */}
             <button
               onClick={handleReject}
-              className="flex-1 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer transition-colors"
+              className={`flex-1 h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer transition-all ${
+                isCurrentlyRejected
+                  ? 'bg-rose-600 text-white dark:bg-rose-600 dark:text-white shadow-sm shadow-rose-500/20 ring-2 ring-rose-500/50'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40'
+              }`}
               title="Descartar este plato y avanzar"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
-              <span>Rechazar</span>
+              <span>{isCurrentlyRejected ? 'Descartado' : 'Rechazar'}</span>
             </button>
 
             {/* Like Button */}
             <button
               onClick={handleLike}
-              className={`flex-[1.1] h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer shadow-sm transition-colors ${
+              className={`flex-[1.1] h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer shadow-sm transition-all ${
                 isCurrentlyLiked
-                  ? 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-zinc-950 font-bold shadow-emerald-500/20'
+                  ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950 font-bold shadow-emerald-500/20 ring-2 ring-emerald-500/50'
                   : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
               }`}
               title="Marcar como 'Me interesa' para el sorteo final"
             >
               <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
-              <span>Me interesa</span>
+              <span>{isCurrentlyLiked ? 'Te interesa' : 'Me interesa'}</span>
             </button>
 
             {/* Direct Select Button */}
