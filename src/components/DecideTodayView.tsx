@@ -326,7 +326,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-4 pb-20 select-none">
+    <div className="w-full max-w-md mx-auto space-y-2.5 sm:space-y-3 pb-1 select-none">
       {/* TOP BAR: Title & Tengo Hambre */}
       <div className="flex items-center justify-between gap-3 pt-1">
         <div>
@@ -504,7 +504,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       </div>
 
       {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
-      <div className="relative w-full h-[470px] min-h-[470px] max-h-[470px] flex items-center justify-center overflow-hidden rounded-3xl">
+      <div className="relative w-full h-[415px] sm:h-[440px] min-h-[390px] max-h-[450px] flex items-center justify-center overflow-hidden rounded-3xl">
         {/* Previous Arrow Button */}
         <button
           onClick={handlePrev}
@@ -551,7 +551,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             >
               {/* FRONT FACE (PORTADA) */}
               <div 
-                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
+                className="absolute inset-0 w-full h-full rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden]"
                 style={{ WebkitBackfaceVisibility: 'hidden' }}
               >
                 {/* Top Badge & Favorite Button */}

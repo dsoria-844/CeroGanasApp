@@ -117,7 +117,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 pb-8 transition-colors duration-200">
+    <div className={`relative ${activeTab === 'decide' ? 'min-h-screen md:h-screen md:overflow-hidden pb-0' : 'min-h-screen pb-8'} bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 transition-colors duration-200`}>
       {/* Sidebar Navigation Drawer */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -148,7 +148,7 @@ export default function App() {
       />
 
       {/* Main Tab Content */}
-      <main className="relative z-10 flex-1 w-full max-w-4xl mx-auto py-4 sm:py-6 px-4 sm:px-6">
+      <main className={`relative z-10 flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 ${activeTab === 'decide' ? 'py-1.5 sm:py-2 flex flex-col justify-center' : 'py-4 sm:py-6'}`}>
         <AnimatePresence mode="wait">
           {activeTab === 'decide' && (
             <motion.div
