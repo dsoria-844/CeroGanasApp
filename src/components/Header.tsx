@@ -41,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
             className="text-left group flex items-center gap-2.5 btn-press cursor-pointer"
           >
             <img 
-              src="/app-logo.jpg" 
+              src="./app-logo.jpg" 
               alt="Cero Ganas" 
               className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl object-cover" 
             />

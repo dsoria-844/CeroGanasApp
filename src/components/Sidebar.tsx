@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <img
-                    src="/sidebar-sloth.jpg"
+                    src="./sidebar-sloth.jpg"
                     alt="Chef Cero Ganas"
                     className="w-12 h-12 rounded-xl object-cover"
                   />

@@ -151,7 +151,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
               {/* Sloth Chef Card with simultaneous Animated Countdown */}
               <div className="relative w-44 h-44 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800">
                 <img
-                  src="/sloth-thinking.jpg"
+                  src="./sloth-thinking.jpg"
                   alt="Pensando..."
                   className="w-full h-full object-cover"
                 />

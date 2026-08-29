@@ -4,12 +4,12 @@
   "description": "Tu asistente definitivo para resolver la fatiga de decisión diaria: delivery y recetas sin vueltas.",
   "icons": [
     {
-      "src": "/cero-ganas-logo.jpg",
+      "src": "./cero-ganas-logo.jpg",
       "sizes": "192x192 512x512 1024x1024",
       "type": "image/jpeg"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
   "background_color": "#09090b",
   "theme_color": "#09090b",
   "display": "standalone",

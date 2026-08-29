@@ -848,7 +848,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 >
                   <div className="relative w-44 h-44 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800 animate-pulse">
                     <img
-                      src="/sloth-thinking.jpg"
+                      src="./sloth-thinking.jpg"
                       alt="Preparando el sorteo..."
                       className="w-full h-full object-cover"
                     />
@@ -1024,7 +1024,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               {/* Sloth Confused Image */}
               <div className="relative mx-auto w-44 h-44 sm:w-48 sm:h-48 rounded-2xl overflow-hidden shadow-md border border-black/[0.06] dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center p-2">
                 <img
-                  src="/sloth-confused.jpg"
+                  src="./sloth-confused.jpg"
                   alt="Perezoso confundido"
                   className="w-full h-full object-contain filter drop-shadow-sm select-none"
                 />

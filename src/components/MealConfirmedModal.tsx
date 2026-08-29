@@ -65,7 +65,7 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
           {/* Sloth Chef Image */}
           <div className="relative mx-auto w-48 h-48 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-md border border-black/[0.06] dark:border-white/[0.08] bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center p-2">
             <img
-              src="/sloth-cooking-happy.jpg"
+              src="./sloth-cooking-happy.jpg"
               alt="Cocinero Perezoso Feliz"
               className="w-full h-full object-contain filter drop-shadow-sm select-none"
             />

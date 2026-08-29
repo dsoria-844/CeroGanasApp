@@ -36,7 +36,7 @@ const SLIDES: OnboardingSlide[] = [
     title: '¡De pensar! Pero sí de comer',
     subtitle: 'Bienvenido a tu solución contra la fatiga de decisión.',
     description: '¿No sabes qué comer hoy? Cero Ganas te ayuda a elegir rápido, sin vueltas ni discusiones, ya sea para cocinar en casa o pedir por delivery.',
-    image: '/sidebar-sloth.jpg',
+    image: './sidebar-sloth.jpg',
     highlights: [
       'Sin formularios pesados ni parálisis de análisis',
       'Platos caseros y opciones de delivery en un solo lugar',
@@ -49,7 +49,7 @@ const SLIDES: OnboardingSlide[] = [
     title: 'Navega 20 opciones al azar',
     subtitle: 'Elige tus favoritos y deja que la suerte decida.',
     description: 'Recorre 20 tarjetas de comida con las flechas. Marca «Me interesa» en las que te tienten (o vuelve atrás si cambias de opinión).',
-    image: '/modal-bg-sloths.jpg',
+    image: './modal-bg-sloths.jpg',
     highlights: [
       'Al juntar 5 platos con «Me interesa», se dispara el Sorteo Final',
       'Toca cualquier tarjeta para girarla y ver la receta / ingredientes',
@@ -62,7 +62,7 @@ const SLIDES: OnboardingSlide[] = [
     title: '¡Tengo Hambre! & Despensa',
     subtitle: 'Decisión en 3 segundos o match con lo que tienes.',
     description: '¿Cero tiempo? Toca «¡Tengo Hambre!» para una orden directa instantánea. ¿Quieres cocinar? Usa la «Despensa Inteligente».',
-    image: '/sloth-thinking.jpg',
+    image: './sloth-thinking.jpg',
     highlights: [
       '«¡Tengo Hambre!»: Cuenta regresiva de 3s y plato decretado',
       '«Despensa»: Marca tus ingredientes y descubre recetas listas para hacer',
@@ -75,7 +75,7 @@ const SLIDES: OnboardingSlide[] = [
     title: '¡A comer rico y sin estrés!',
     subtitle: 'Accede a esta guía cuando quieras desde la barra lateral.',
     description: 'Guarda tus platos en el historial, agrega tus favoritos y planifica tu semana. ¡Buen provecho!',
-    image: '/app-logo.jpg',
+    image: './app-logo.jpg',
     highlights: [
       'Menú lateral con acceso a Historial, Favoritos y Plan Semanal',
       'Sección «Ayuda» siempre disponible para repasar cómo funciona',

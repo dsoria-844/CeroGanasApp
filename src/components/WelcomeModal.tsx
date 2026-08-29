@@ -78,7 +78,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
           <div className="relative pt-1">
             <div className="w-36 h-36 sm:w-40 sm:h-40 rounded-3xl overflow-hidden shadow-lg border-2 border-amber-500/30 bg-amber-500/10 p-1 mx-auto flex items-center justify-center">
               <img 
-                src="/welcome-mascot.jpg" 
+                src="./welcome-mascot.jpg" 
                 alt="Chef Perezoso Cero Ganas" 
                 className="w-full h-full object-contain rounded-2xl"
               />
