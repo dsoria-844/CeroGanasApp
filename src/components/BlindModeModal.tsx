@@ -270,7 +270,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
                   className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 shadow-md btn-press cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>¡Acepto la orden! Guardar en historial</span>
+                  <span>¡Acepto el plato!</span>
                 </button>
               </div>
             </motion.div>
