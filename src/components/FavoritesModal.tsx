@@ -1,21 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Star, 
   Plus, 
   Trash2, 
-  Sparkles, 
   Search, 
   Bike, 
-  ChefHat, 
-  Info,
-  Check
+  ChefHat
 } from 'lucide-react';
 import { UserFavoriteMeal } from '../types';
 import { 
   createFavoriteFromInput, 
-  inferMealAttributes, 
   triggerHaptic 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
@@ -29,15 +25,15 @@ interface FavoritesModalProps {
   onDeleteFavorite: (id: string) => void;
 }
 
-const QUICK_INSPIRATION = [
-  '🥩 Milanesa a caballo con papas',
-  '🍕 Pizza Napolitana con albahaca',
-  '🍣 Combo Sushi Rolls variados',
-  '🍔 Hamburguesa Smash con cheddar',
-  '🌮 Tacos de carne con guacamole',
-  '🥗 Poke Bowl de salmón y palta',
-  '🍝 Ravioles caseros con estofado',
-  '🍗 Pollo al curry con arroz jazmín',
+const POPULAR_SUGGESTIONS = [
+  { name: 'Milanesa con papas', emoji: '🥩' },
+  { name: 'Pizza Napolitana', emoji: '🍕' },
+  { name: 'Hamburguesa con cheddar', emoji: '🍔' },
+  { name: 'Sushi variado', emoji: '🍣' },
+  { name: 'Empanadas de carne', emoji: '🥟' },
+  { name: 'Pasta con salsa', emoji: '🍝' },
+  { name: 'Pollo al horno', emoji: '🍗' },
+  { name: 'Tacos caseros', emoji: '🌮' },
 ];
 
 export const FavoritesModal: React.FC<FavoritesModalProps> = ({
@@ -48,14 +44,14 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
   onAddFavorite,
   onDeleteFavorite,
 }) => {
-  const [inputValue, setInputValue] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [inputText, setInputText] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'cooking' | 'delivery'>('all');
   const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleQuickAdd = (textToAdd?: string) => {
-    const raw = (textToAdd || inputValue).trim();
+  const handleAdd = (nameToAdd?: string) => {
+    const raw = (nameToAdd || inputText).trim();
     if (!raw) return;
 
     sound.playSuccess();
@@ -63,287 +59,317 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
     const newFav = createFavoriteFromInput(raw);
     onAddFavorite(newFav);
     setRecentlyAddedId(newFav.id);
-    setInputValue('');
+    setInputText('');
 
     setTimeout(() => {
       setRecentlyAddedId(null);
-    }, 2000);
+    }, 1800);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleQuickAdd();
+      handleAdd();
     }
   };
 
-  const liveInference = inputValue.trim() ? inferMealAttributes(inputValue.trim()) : null;
-
-  const filteredFavorites = favorites.filter(fav => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      fav.name.toLowerCase().includes(q) ||
-      fav.tags.some(t => t.toLowerCase().includes(q)) ||
-      fav.category.toLowerCase().includes(q)
-    );
-  });
-
-  const getCategoryBadgeLabel = (cat: string) => {
-    switch (cat) {
-      case 'cheat_meal': return 'Cheat Meal';
-      case 'healthy': return 'Saludable';
-      case 'economic': return 'Económico';
-      default: return 'Típico';
-    }
+  const handleDelete = (id: string) => {
+    sound.playTick(450);
+    triggerHaptic('light');
+    onDeleteFavorite(id);
   };
 
-  const modalBody = (
-    <div className="space-y-5">
-      {/* Quick Creation Box */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3">
-        <div className="flex items-center justify-between">
-          <label htmlFor="input-new-favorite" className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>+ Agregar Nuevo Plato Favorito</span>
-          </label>
-          <span className="text-[10px] text-zinc-400 font-medium">Detección Inteligente</span>
+  const filteredFavorites = useMemo(() => {
+    return favorites.filter(fav => {
+      const matchesSearch = !inputText.trim() || 
+        fav.name.toLowerCase().includes(inputText.toLowerCase().trim()) ||
+        (fav.tags && fav.tags.some(t => t.toLowerCase().includes(inputText.toLowerCase().trim())));
+      
+      const matchesFilter = activeFilter === 'all' || fav.source === activeFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [favorites, inputText, activeFilter]);
+
+  const exactMatchExists = useMemo(() => {
+    return favorites.some(f => f.name.toLowerCase().trim() === inputText.toLowerCase().trim());
+  }, [favorites, inputText]);
+
+  const content = (
+    <div className="space-y-4 select-none">
+      {/* Search & Quick Add Input Bar */}
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Buscar o escribir plato para agregar..."
+            className="w-full bg-zinc-100 dark:bg-zinc-800/80 border border-black/[0.06] dark:border-white/[0.08] rounded-2xl pl-10 pr-9 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all font-sans"
+          />
+          {inputText && (
+            <button
+              onClick={() => setInputText('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 p-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            id="input-new-favorite"
-            type="text"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ej: Empanadas de carne, Sushi, Wok..."
-            className="flex-1 bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] rounded-xl px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500 font-sans"
-          />
-          <button
-            id="btn-add-favorite-submit"
-            onClick={() => handleQuickAdd()}
-            disabled={!inputValue.trim()}
-            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1 btn-press cursor-pointer disabled:cursor-not-allowed shrink-0 shadow-xs"
+        {/* Add button (highlighted when typing new dish) */}
+        {inputText.trim() && !exactMatchExists && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            onClick={() => handleAdd()}
+            className="px-3.5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer shrink-0 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
             <span>Agregar</span>
+          </motion.button>
+        )}
+      </div>
+
+      {/* Filter Tabs & Counter */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => {
+              sound.playClick(750);
+              setActiveFilter('all');
+            }}
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer btn-press ${
+              activeFilter === 'all'
+                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            Todos ({favorites.length})
+          </button>
+
+          <button
+            onClick={() => {
+              sound.playClick(750);
+              setActiveFilter('cooking');
+            }}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer btn-press ${
+              activeFilter === 'cooking'
+                ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950 shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            <ChefHat className="w-3 h-3" />
+            <span>Caseros</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sound.playClick(750);
+              setActiveFilter('delivery');
+            }}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer btn-press ${
+              activeFilter === 'delivery'
+                ? 'bg-amber-500 text-zinc-950 shadow-xs'
+                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            }`}
+          >
+            <Bike className="w-3 h-3" />
+            <span>Delivery</span>
           </button>
         </div>
 
-        {/* Live Auto-Inference Preview */}
-        {liveInference && (
-          <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center gap-2 text-xs flex-wrap">
-            <span className="text-[11px] text-zinc-400 font-medium">Inferencia:</span>
-            <span className="text-base">{liveInference.emoji}</span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
-              {getCategoryBadgeLabel(liveInference.category)}
-            </span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300">
-              {liveInference.priceLevel}
-            </span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-black/[0.04] dark:border-white/[0.06] text-zinc-500 dark:text-zinc-400">
-              ⏱️ {liveInference.deliveryTime}
-            </span>
-          </div>
+        {favorites.length > 0 && (
+          <span className="text-[11px] text-zinc-400 font-medium hidden sm:inline">
+            {filteredFavorites.length} {filteredFavorites.length === 1 ? 'plato' : 'platos'}
+          </span>
         )}
+      </div>
 
-        {/* Quick Inspiration Chips */}
-        <div className="pt-1">
-          <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider mb-1.5">
-            O añade sugerencias populares:
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {QUICK_INSPIRATION.map((item, idx) => {
-              const isAlreadyAdded = favorites.some(
-                f => f.name.toLowerCase() === item.replace(/^[^\s]+\s/, '').toLowerCase()
+      {/* Favorites List Grid */}
+      {filteredFavorites.length === 0 ? (
+        <div className="p-8 sm:p-10 rounded-3xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto text-xl">
+            <Star className="w-6 h-6 fill-amber-400/30 text-amber-500" />
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+              {inputText.trim() ? 'No se encontraron platos' : 'Sin platos favoritos aún'}
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+              {inputText.trim() 
+                ? `Presiona "Agregar" para crear "${inputText}" como favorito`
+                : 'Agrega tus comidas preferidas tocando en las sugerencias o escribiendo arriba.'}
+            </p>
+          </div>
+
+          {/* Quick Suggestions Chips in Empty State */}
+          <div className="pt-2">
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-zinc-400 mb-2">
+              Sugerencias populares (1 toque para agregar):
+            </p>
+            <div className="flex flex-wrap justify-center gap-1.5 max-w-md mx-auto">
+              {POPULAR_SUGGESTIONS.map((item, idx) => {
+                const isAdded = favorites.some(f => f.name.toLowerCase() === item.name.toLowerCase());
+                if (isAdded) return null;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleAdd(item.name)}
+                    className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 btn-press cursor-pointer shadow-2xs transition-all"
+                  >
+                    <span>{item.emoji}</span>
+                    <span className="font-medium">{item.name}</span>
+                    <Plus className="w-3 h-3 text-zinc-400" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <AnimatePresence mode="popLayout">
+            {filteredFavorites.map(fav => {
+              const isRecent = fav.id === recentlyAddedId;
+              return (
+                <motion.div
+                  key={fav.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
+                    isRecent
+                      ? 'bg-amber-500/10 border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
+                      : 'bg-white dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.08] hover:border-black/[0.15] dark:hover:border-white/[0.15] shadow-2xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-2xl shrink-0 select-none">
+                      {fav.imageEmoji}
+                    </div>
+
+                    <div className="min-w-0">
+                      <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                        {fav.name}
+                      </h4>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <span className={`inline-flex items-center gap-1 font-medium ${
+                          fav.source === 'cooking' 
+                            ? 'text-emerald-700 dark:text-emerald-400' 
+                            : 'text-amber-700 dark:text-amber-400'
+                        }`}>
+                          {fav.source === 'cooking' ? <ChefHat className="w-3 h-3" /> : <Bike className="w-3 h-3" />}
+                          <span>{fav.source === 'cooking' ? 'Cocinar' : 'Delivery'}</span>
+                        </span>
+                        {fav.deliveryTime && (
+                          <>
+                            <span>•</span>
+                            <span>{fav.deliveryTime}</span>
+                          </>
+                        )}
+                        {fav.vibe && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{fav.vibe}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDelete(fav.id)}
+                    className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors btn-press cursor-pointer shrink-0"
+                    title="Eliminar de favoritos"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </motion.div>
               );
+            })}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Compact Suggestions Row when list is short */}
+      {favorites.length > 0 && favorites.length < 5 && (
+        <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] space-y-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            Sugerencias para sumar:
+          </span>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {POPULAR_SUGGESTIONS.map((item, idx) => {
+              const isAdded = favorites.some(f => f.name.toLowerCase() === item.name.toLowerCase());
+              if (isAdded) return null;
               return (
                 <button
                   key={idx}
-                  onClick={() => handleQuickAdd(item.replace(/^[^\s]+\s/, ''))}
-                  disabled={isAlreadyAdded}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-all flex items-center gap-1 btn-press cursor-pointer ${
-                    isAlreadyAdded
-                      ? 'bg-zinc-100 dark:bg-zinc-900/40 text-zinc-400 border-black/[0.04] dark:border-zinc-800 cursor-default'
-                      : 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-black/[0.08] dark:border-white/[0.08]'
-                  }`}
+                  onClick={() => handleAdd(item.name)}
+                  className="px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 flex items-center gap-1 shrink-0 btn-press cursor-pointer transition-all"
                 >
-                  {isAlreadyAdded ? (
-                    <>
-                      <Check className="w-3 h-3 text-emerald-500" />
-                      <span>{item}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>+</span>
-                      <span>{item}</span>
-                    </>
-                  )}
+                  <span>{item.emoji}</span>
+                  <span className="font-medium">{item.name}</span>
+                  <Plus className="w-3 h-3 text-zinc-400" />
                 </button>
               );
             })}
           </div>
         </div>
-      </div>
-
-      {/* Search Filter */}
-      {favorites.length > 3 && (
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar entre tus platos favoritos..."
-            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] rounded-xl pl-8 pr-4 py-2 text-xs text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
       )}
-
-      {/* Favorites List */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-            Tus Platos ({filteredFavorites.length})
-          </span>
-          <span className="text-[11px] text-zinc-400">
-            Disponibles para la ruleta
-          </span>
-        </div>
-
-        {filteredFavorites.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] text-center space-y-2">
-            <p className="text-3xl">⭐</p>
-            <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-              {searchQuery ? 'No hay platos que coincidan con la búsqueda' : 'Aún no tienes platos favoritos guardados'}
-            </p>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
-              Agrega tus comidas preferidas arriba o guárdalas desde los resultados de la ruleta y las recetas.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {filteredFavorites.map(fav => {
-              const isRecent = fav.id === recentlyAddedId;
-              return (
-                <div
-                  key={fav.id}
-                  className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 relative shadow-xs ${
-                    isRecent 
-                      ? 'bg-amber-500/10 border-amber-500/50 shadow-md ring-1 ring-amber-500/30' 
-                      : 'bg-white dark:bg-zinc-950 border-black/[0.08] dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-zinc-700'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-lg shrink-0">
-                          {fav.imageEmoji}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                            {fav.name}
-                          </h4>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-900 border border-black/[0.04] dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
-                              {getCategoryBadgeLabel(fav.category)}
-                            </span>
-                            {fav.source === 'cooking' && (
-                              <span className="text-[9px] text-zinc-400 flex items-center gap-0.5">
-                                <ChefHat className="w-2.5 h-2.5" /> Casero
-                              </span>
-                            )}
-                            {fav.source === 'delivery' && (
-                              <span className="text-[9px] text-zinc-400 flex items-center gap-0.5">
-                                <Bike className="w-2.5 h-2.5" /> Delivery
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          sound.playClick(450);
-                          triggerHaptic('light');
-                          onDeleteFavorite(fav.id);
-                        }}
-                        className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors btn-press cursor-pointer"
-                        title="Eliminar de favoritos"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {fav.tags && fav.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {fav.tags.slice(0, 3).map((tag, idx) => (
-                          <span key={idx} className="text-[9px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-black/[0.04] dark:border-zinc-800">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {fav.ingredients && fav.ingredients.length > 0 && (
-                    <div className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] text-zinc-400 truncate">
-                      Ingredientes: {fav.ingredients.join(', ')}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
     </div>
   );
 
   if (isEmbedded) {
     return (
-      <div className="w-full max-w-2xl mx-auto rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-lg p-6 sm:p-8 space-y-6">
-        {modalBody}
+      <div className="w-full max-w-3xl mx-auto space-y-5 pb-24">
+        {/* View Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+              <Star className="w-6 h-6 text-amber-500 fill-amber-400" />
+              <span>Mis Platos Favoritos</span>
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-medium">
+              Tus comidas preferidas para priorizar en opciones y sorteos
+            </p>
+          </div>
+        </div>
+
+        <div className="apple-card p-5 sm:p-7 space-y-4">
+          {content}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
         transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-        className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-2xl p-6 sm:p-8 overflow-hidden max-h-[92vh] flex flex-col"
+        className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-2xl p-5 sm:p-7 overflow-hidden max-h-[90vh] flex flex-col space-y-4"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500 shadow-xs">
-              <Star className="w-5 h-5 fill-amber-400" />
+        {/* Modal Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+              <Star className="w-4 h-4 fill-amber-400" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  Mis Platos Favoritos
-                </h3>
-                <span className="text-xs px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
-                  {favorites.length}
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-                Tus comidas predilectas para la ruleta
+              <h3 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                Mis Platos Favoritos
+              </h3>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+                Tus comidas predilectas para la ruleta y sorteos
               </p>
             </div>
           </div>
@@ -354,33 +380,15 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
               sound.playClick(600);
               onClose();
             }}
-            className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors btn-press cursor-pointer"
+            className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto py-4 flex-1 pr-1 scrollbar-none">
-          {modalBody}
-        </div>
-
-        {/* Footer */}
-        <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.06] shrink-0 flex items-center justify-between gap-3">
-          <div className="text-[11px] text-zinc-400 flex items-center gap-1.5">
-            <Info className="w-3.5 h-3.5" />
-            <span>Almacenado localmente en tu dispositivo</span>
-          </div>
-
-          <button
-            onClick={() => {
-              sound.playClick(700);
-              onClose();
-            }}
-            className="px-5 py-2 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs btn-press cursor-pointer shadow-xs"
-          >
-            Listo
-          </button>
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1 pr-0.5">
+          {content}
         </div>
       </motion.div>
     </div>

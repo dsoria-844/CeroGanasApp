@@ -243,18 +243,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-              className="space-y-4"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                    Mis Platos Favoritos
-                  </h2>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-                    Tus comidas predilectas para la ruleta
-                  </p>
-                </div>
-              </div>
               <FavoritesModal
                 isOpen={true}
                 isEmbedded={true}
