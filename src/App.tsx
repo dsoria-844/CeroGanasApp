@@ -29,6 +29,7 @@ import {
 } from './utils/storage';
 import { Theme, getInitialTheme, applyTheme } from './utils/theme';
 import { sound } from './utils/audio';
+import { useBodyScrollLock } from './hooks/useBodyScrollLock';
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>('light');
@@ -53,6 +54,17 @@ export default function App() {
     emoji: string;
     type: 'delivery' | 'cooking';
   } | null>(null);
+
+  // Lock background scroll whenever any modal or drawer is active
+  useBodyScrollLock(
+    isOnboardingOpen ||
+    isBlindModeOpen ||
+    isExclusionsOpen ||
+    isFavoritesOpen ||
+    viewingRecipe !== null ||
+    acceptedMealConfirmation !== null ||
+    isSidebarOpen
+  );
 
   // Initialize Theme and Storage state
   useEffect(() => {

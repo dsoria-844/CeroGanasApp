@@ -31,6 +31,7 @@ import {
   triggerHaptic 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface UnifiedMealItem {
   id: string;
@@ -63,6 +64,9 @@ export const CreateMealView: React.FC = () => {
 
   // Preview Modal State
   const [previewMeal, setPreviewMeal] = useState<UnifiedMealItem | null>(null);
+
+  // Lock scroll when any modal in this view is open
+  useBodyScrollLock(isFormOpen || previewMeal !== null);
 
   // Form Inputs
   const [name, setName] = useState('');
@@ -470,7 +474,7 @@ export const CreateMealView: React.FC = () => {
 
       {/* MODAL 1: CREATE / EDIT FORM */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-lg my-8 rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-2xl space-y-5">
             {/* Close */}
             <button
@@ -721,7 +725,7 @@ export const CreateMealView: React.FC = () => {
 
       {/* MODAL 2: DETAIL PREVIEW */}
       {previewMeal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 space-y-4 shadow-2xl">
             <button
               onClick={() => setPreviewMeal(null)}

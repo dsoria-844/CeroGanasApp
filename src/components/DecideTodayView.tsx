@@ -44,6 +44,7 @@ import {
   getDeliverySearchUrl 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface DecideTodayViewProps {
   exclusions: string[];
@@ -113,6 +114,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const [duelWinner, setDuelWinner] = useState<MealCardItem | null>(null);
   const [isSpinningDuel, setIsSpinningDuel] = useState<boolean>(false);
   const duelTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Lock body scroll when duel or requirement modal is open
+  useBodyScrollLock(isDuelActive || isRaffleRequirementOpen);
 
   useEffect(() => {
     setDuelThreshold(loadDuelThreshold());
