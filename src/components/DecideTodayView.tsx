@@ -534,19 +534,17 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             )}
           </div>
 
-          {/* Direct Raffle Button (Only when enabled in settings) */}
-          {isDuelFeatureEnabled && (
-            <button
-              id="btn-direct-raffle"
-              onClick={handleDirectRaffle}
-              disabled={cardDeck.length === 0}
-              className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
-              title="Sortear entre platos elegidos"
-            >
-              <Dices className="w-3.5 h-3.5" />
-              <span>Sortear ({likedCards.length})</span>
-            </button>
-          )}
+          {/* Direct Raffle Button (Always available) */}
+          <button
+            id="btn-direct-raffle"
+            onClick={handleDirectRaffle}
+            disabled={cardDeck.length === 0}
+            className="px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0 transition-colors"
+            title="Sortear entre platos elegidos"
+          >
+            <Dices className="w-3.5 h-3.5" />
+            <span>Sortear ({likedCards.length})</span>
+          </button>
         </div>
 
         {/* 20-Item Micro Indicator Strip */}

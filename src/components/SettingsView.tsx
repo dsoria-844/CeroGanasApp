@@ -161,16 +161,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </p>
       </div>
 
-      {/* SECCIÓN 1: SORTEO FINAL DE COMIDAS */}
+      {/* SECCIÓN 1: META DE PLATOS A ACUMULAR PARA SORTEO */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-500" />
-              <span>Sorteo Final de Comidas</span>
+              <span>Platos a Acumular para Sorteo</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Sortea automáticamente entre los platos que marcaste con "Me interesa"
+              El botón de sortear siempre está disponible. Aquí puedes activar o desactivar el disparo automático al acumular cierta cantidad de platos.
             </p>
           </div>
         </div>
@@ -179,12 +179,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
           <div className="space-y-0.5">
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-              Habilitar Sorteo Final
+              Activar meta de platos a acumular
             </span>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               {isDuelEnabled
-                ? 'El sorteo se disparará automáticamente al juntar la cantidad de platos indicada'
-                : 'Deshabilitado por defecto (decisión directa o con ¡Tengo Hambre!)'}
+                ? `El sorteo iniciará automáticamente al marcar ${duelThreshold} platos con "Me interesa"`
+                : 'Deshabilitado: el sorteo solo se realiza cuando tocas el botón "Sortear"'}
             </p>
           </div>
 
@@ -194,7 +194,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-1 cursor-pointer btn-press shrink-0 ${
               isDuelEnabled ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-700'
             }`}
-            title={isDuelEnabled ? 'Desactivar Sorteo Final' : 'Activar Sorteo Final'}
+            title={isDuelEnabled ? 'Desactivar meta de acumulación' : 'Activar meta de acumulación'}
           >
             <motion.div
               animate={{ x: isDuelEnabled ? 20 : 0 }}
