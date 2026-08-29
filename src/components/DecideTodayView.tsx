@@ -107,6 +107,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
   // Sorteo / Duel State
   const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
+  const [duelOrigin, setDuelOrigin] = useState<'raffle' | 'direct'>('raffle');
   const [isPreparingRaffle, setIsPreparingRaffle] = useState<boolean>(false);
   const [duelWinner, setDuelWinner] = useState<MealCardItem | null>(null);
   const [isSpinningDuel, setIsSpinningDuel] = useState<boolean>(false);
@@ -200,6 +201,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     const threshold = loadDuelThreshold();
     if (updatedLikes.length >= threshold) {
       // Trigger Sorteo Final with 2-second preparation
+      setDuelOrigin('raffle');
       setIsDuelActive(true);
       setIsPreparingRaffle(true);
       sound.playClick(900);
@@ -295,12 +297,11 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     sound.playSuccess();
     triggerHaptic('success');
     triggerVictoryConfetti();
-    onAcceptMeal(
-      currentCard.name,
-      currentCard.type,
-      currentCard.imageEmoji,
-      'Elección directa'
-    );
+    setDuelWinner(currentCard);
+    setDuelOrigin('direct');
+    setIsPreparingRaffle(false);
+    setIsSpinningDuel(false);
+    setIsDuelActive(true);
   };
 
   const handleDirectRaffle = () => {
@@ -308,6 +309,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     triggerHaptic('medium');
     const pool = likedCards.length > 0 ? likedCards : cardDeck;
     if (pool.length === 0) return;
+    setDuelOrigin('raffle');
     setIsDuelActive(true);
     setIsPreparingRaffle(true);
 
@@ -821,14 +823,25 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               {/* Header */}
               <div className="flex flex-col items-center justify-center gap-1.5">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
-                  <span>Sorteo Final ({likedCards.length} opciones)</span>
+                  {duelOrigin === 'direct' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                      <span>Plato Elegido Directamente</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
+                      <span>Sorteo Final ({likedCards.length} opciones)</span>
+                    </>
+                  )}
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
-                  ¡Sorteo Final!
+                  {duelOrigin === 'direct' ? '¡Plato Elegido!' : '¡Sorteo Final!'}
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {isPreparingRaffle 
+                  {duelOrigin === 'direct'
+                    ? 'Has seleccionado este plato para comer hoy.'
+                    : isPreparingRaffle 
                     ? `Reuniendo tus ${likedCards.length} opciones favoritas...` 
                     : 'Sorteo aleatorio entre tus platos seleccionados.'}
                 </p>
@@ -877,7 +890,11 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
                     <div className="space-y-1">
                       <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
-                        {isSpinningDuel ? 'Sorteando tu comida...' : 'Salio sorteado:'}
+                        {isSpinningDuel 
+                          ? 'Sorteando tu comida...' 
+                          : duelOrigin === 'direct'
+                          ? 'Plato elegido:' 
+                          : 'Salio sorteado:'}
                       </span>
                       <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
                         {duelWinner.name}
@@ -951,7 +968,9 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                             duelWinner.name,
                             duelWinner.type,
                             duelWinner.imageEmoji,
-                            `Sorteo • ${duelWinner.timeEstimate}`
+                            duelOrigin === 'direct'
+                              ? `Elección directa • ${duelWinner.timeEstimate}`
+                              : `Sorteo • ${duelWinner.timeEstimate}`
                           );
                           setIsDuelActive(false);
                           setLikedCards([]);
