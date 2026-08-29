@@ -47,6 +47,20 @@ interface UnifiedMealItem {
   delivery?: DeliveryOption;
 }
 
+// Universal Food Categories for all dishes
+const FOOD_CATEGORIES = [
+  { id: 'Carnes & Minutas', label: '🥩 Carnes & Minutas' },
+  { id: 'Pastas & Olla', label: '🍝 Pastas & Olla' },
+  { id: 'Pizzas & Empanadas', label: '🍕 Pizzas & Empanadas' },
+  { id: 'Hamburguesas & Sandwiches', label: '🍔 Hamburguesas & Sandwiches' },
+  { id: 'Pollo & Aves', label: '🍗 Pollo & Aves' },
+  { id: 'Pescados & Mariscos', label: '🐟 Pescados & Mariscos' },
+  { id: 'Saludable & Ensaladas', label: '🥗 Saludable & Ensaladas' },
+  { id: 'Tartas & Vegetariano', label: '🥑 Tartas & Vegetariano' },
+  { id: 'Postres & Dulces', label: '🍰 Postres & Dulces' },
+  { id: 'Otras Comidas', label: '🍲 Otras Comidas' },
+];
+
 export const CreateMealView: React.FC = () => {
   const [catalog, setCatalog] = useState<{ delivery: DeliveryOption[]; recipes: Recipe[]; customCount: number }>({
     delivery: [],
@@ -72,6 +86,7 @@ export const CreateMealView: React.FC = () => {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🍲');
   const [timeEstimate, setTimeEstimate] = useState('20');
+  const [mealCategory, setMealCategory] = useState<string>('Carnes & Minutas');
   const [tagsInput, setTagsInput] = useState('');
   const [difficulty, setDifficulty] = useState<'Fácil' | 'Media' | 'Rápida'>('Fácil');
   const [step1, setStep1] = useState('');
@@ -155,6 +170,7 @@ export const CreateMealView: React.FC = () => {
     setName('');
     setEmoji('🍲');
     setTimeEstimate('20');
+    setMealCategory('Carnes & Minutas');
     setTagsInput('');
     setDifficulty('Fácil');
     setStep1('');
@@ -174,6 +190,7 @@ export const CreateMealView: React.FC = () => {
     setActiveType(meal.type);
     setName(meal.name);
     setEmoji(meal.imageEmoji);
+    setMealCategory(meal.recipe?.category || 'Carnes & Minutas');
     setTagsInput(meal.tags.join(', '));
     setIngredientsList(meal.ingredients);
 
@@ -228,7 +245,7 @@ export const CreateMealView: React.FC = () => {
         prepTime: Math.max(5, Math.floor(parseInt(timeEstimate) / 2) || 10),
         cookTime: Math.max(5, Math.floor(parseInt(timeEstimate) / 2) || 10),
         difficulty,
-        category: 'Express',
+        category: mealCategory,
         requiredIngredients: ingredientsList.map(i => i.toLowerCase().replace(/\s+/g, '_')),
         optionalIngredients: [],
         allIngredientsFormatted: ingredientsList.map(ing => ({
@@ -236,7 +253,7 @@ export const CreateMealView: React.FC = () => {
           name: ing,
         })),
         steps,
-        tags: ['casero', 'personalizado', ...parsedTags],
+        tags: ['casero', 'personalizado', mealCategory.toLowerCase(), ...parsedTags],
         caloriesApprox: '~450 kcal',
         nutritionHighlight: 'Plato casero guardado en Cero Ganas',
         imageEmoji: emoji || '🍳',
@@ -251,7 +268,7 @@ export const CreateMealView: React.FC = () => {
         category: deliveryCategory,
         priceLevel: '$$',
         deliveryTime: `${timeEstimate || '25-35'} min`,
-        tags: ['delivery', 'personalizado', ...parsedTags],
+        tags: ['delivery', 'personalizado', mealCategory.toLowerCase(), ...parsedTags],
         description: description.trim() || 'Opción de delivery agregada por ti.',
         ingredients: ingredientsList.map(i => i.toLowerCase().replace(/\s+/g, '_')),
         imageEmoji: emoji || '🛵',
@@ -472,76 +489,81 @@ export const CreateMealView: React.FC = () => {
         )}
       </div>
 
-      {/* MODAL 1: CREATE / EDIT FORM */}
+      {/* MODAL 1: CREATE / EDIT FORM (MOBILE-FIRST COMPACT REDESIGN) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-lg my-8 rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 sm:p-7 shadow-2xl space-y-5">
-            {/* Close */}
-            <button
-              onClick={() => setIsFormOpen(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Header */}
-            <div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                {editingMealId ? 'Editar Plato' : 'Crear Nuevo Plato'}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {editingMealId ? 'Modifica los datos del plato y sus ingredientes' : 'Completa la información para sumarlo a Cero Ganas'}
-              </p>
-            </div>
-
-            {/* Type Selector (Cocinar vs Delivery) */}
-            <div className="flex p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06]">
-              <button
-                type="button"
-                onClick={() => setActiveType('cooking')}
-                className={`flex-1 py-2 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  activeType === 'cooking'
-                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400'
-                }`}
-              >
-                <ChefHat className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Receta Casera</span>
-              </button>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md overflow-hidden select-none">
+          <div className="relative w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex flex-col overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 pb-3 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 shrink-0">
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                  {editingMealId ? 'Editar Plato' : 'Crear Nuevo Plato'}
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {editingMealId ? 'Modifica los datos del plato' : 'Agrega un plato a tu catálogo'}
+                </p>
+              </div>
 
               <button
-                type="button"
-                onClick={() => setActiveType('delivery')}
-                className={`flex-1 py-2 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  activeType === 'delivery'
-                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs'
-                    : 'text-zinc-600 dark:text-zinc-400'
-                }`}
+                onClick={() => setIsFormOpen(false)}
+                className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer shrink-0"
               >
-                <Bike className="w-3.5 h-3.5 text-amber-500" />
-                <span>Plato de Delivery</span>
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Form Fields */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-3 space-y-1">
-                  <label className="text-xs uppercase font-semibold text-zinc-500">
+            {/* Segmented Mode Switch */}
+            <div className="px-4 sm:px-5 pt-3 shrink-0">
+              <div className="flex p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setActiveType('cooking')}
+                  className={`flex-1 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeType === 'cooking'
+                      ? 'bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-500/20'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  }`}
+                >
+                  <ChefHat className="w-3.5 h-3.5" />
+                  <span>Cocinar en Casa</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveType('delivery')}
+                  className={`flex-1 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeType === 'delivery'
+                      ? 'bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-500/20'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  }`}
+                >
+                  <Bike className="w-3.5 h-3.5" />
+                  <span>Pedir Delivery</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+              {/* Row 1: Nombre + Emoji */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                     Nombre del Plato *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. Tarta de zapallitos, Hamburguesa con papas..."
+                    placeholder="Ej. Tarta de zapallitos, Milanesas..."
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs uppercase font-semibold text-zinc-500">
+                <div className="w-16 space-y-1 shrink-0">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider text-center block">
                     Emoji
                   </label>
                   <input
@@ -549,15 +571,33 @@ export const CreateMealView: React.FC = () => {
                     maxLength={2}
                     value={emoji}
                     onChange={e => setEmoji(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-center text-lg text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-center text-lg text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Row 2: Categoría Universal (OBLIGATORIA PARA TODOS LOS PLATOS) + Tiempo */}
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs uppercase font-semibold text-zinc-500">
-                    Tiempo estimado (min)
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider flex items-center gap-1">
+                    <span>Categoría *</span>
+                  </label>
+                  <select
+                    value={mealCategory}
+                    onChange={e => setMealCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                  >
+                    {FOOD_CATEGORIES.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Tiempo (min)
                   </label>
                   <input
                     type="number"
@@ -565,19 +605,22 @@ export const CreateMealView: React.FC = () => {
                     max="120"
                     value={timeEstimate}
                     onChange={e => setTimeEstimate(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                 </div>
+              </div>
 
+              {/* Row 3: Dificultad o Tipo de Delivery */}
+              <div className="grid grid-cols-2 gap-2">
                 {activeType === 'cooking' ? (
                   <div className="space-y-1">
-                    <label className="text-xs uppercase font-semibold text-zinc-500">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                       Dificultad
                     </label>
                     <select
                       value={difficulty}
                       onChange={e => setDifficulty(e.target.value as any)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                     >
                       <option value="Fácil">Fácil</option>
                       <option value="Rápida">Rápida</option>
@@ -586,13 +629,13 @@ export const CreateMealView: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <label className="text-xs uppercase font-semibold text-zinc-500">
-                      Categoría
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                      Estilo de Delivery
                     </label>
                     <select
                       value={deliveryCategory}
                       onChange={e => setDeliveryCategory(e.target.value as any)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                     >
                       <option value="typical">Típico / Clásico</option>
                       <option value="cheat_meal">Antojo / Cheat Meal</option>
@@ -601,17 +644,30 @@ export const CreateMealView: React.FC = () => {
                     </select>
                   </div>
                 )}
-              </div>
 
-              {/* Ingredients */}
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase font-semibold text-zinc-500">
-                  Ingredientes Clave
-                </label>
-                <div className="flex gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Etiquetas (opcional)
+                  </label>
                   <input
                     type="text"
-                    placeholder="Escribe un ingrediente y presiona Enter..."
+                    placeholder="rapido, cena..."
+                    value={tagsInput}
+                    onChange={e => setTagsInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Ingredientes clave */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                  Ingredientes Clave
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Escribe ingrediente y pulsa Enter..."
                     value={ingredientInput}
                     onChange={e => setIngredientInput(e.target.value)}
                     onKeyDown={e => {
@@ -620,23 +676,23 @@ export const CreateMealView: React.FC = () => {
                         handleAddIngredient();
                       }
                     }}
-                    className="flex-1 px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddIngredient}
-                    className="px-3.5 py-2 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold btn-press cursor-pointer"
+                    className="px-3 py-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold btn-press cursor-pointer shrink-0"
                   >
-                    Agregar
+                    + Agregar
                   </button>
                 </div>
 
                 {ingredientsList.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <div className="flex flex-wrap gap-1 pt-1 max-h-20 overflow-y-auto">
                     {ingredientsList.map((ing, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-[11px] font-medium"
                       >
                         <span>{ing}</span>
                         <button
@@ -652,68 +708,68 @@ export const CreateMealView: React.FC = () => {
                 )}
               </div>
 
-              {/* Recipe Steps or Delivery Description */}
+              {/* Pasos de Preparación (Cocinar) o Descripción (Delivery) */}
               {activeType === 'cooking' ? (
-                <div className="space-y-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  <label className="text-xs uppercase font-semibold text-zinc-500">
-                    Pasos de Preparación
+                <div className="space-y-1.5 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Pasos de Cocina
                   </label>
                   <input
                     type="text"
-                    placeholder="Paso 1: Saltear y preparar los ingredientes..."
+                    placeholder="Paso 1: Saltear y preparar ingredientes..."
                     value={step1}
                     onChange={e => setStep1(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Paso 2: Cocinar a fuego medio y condimentar..."
                     value={step2}
                     onChange={e => setStep2(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                   <input
                     type="text"
                     placeholder="Paso 3: Servir caliente..."
                     value={step3}
                     onChange={e => setStep3(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                   <input
                     type="text"
-                    placeholder="Tip del Chef (Opcional)..."
+                    placeholder="Tip del chef (opcional)..."
                     value={chefTip}
                     onChange={e => setChefTip(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                   />
                 </div>
               ) : (
-                <div className="space-y-1 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  <label className="text-xs uppercase font-semibold text-zinc-500">
-                    Descripción del Plato
+                <div className="space-y-1 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Descripción del Delivery
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Descripción para pedir por delivery..."
+                    placeholder="Detalles para pedir por app de delivery..."
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
+                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
                   />
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+              {/* Bottom Sticky Action Bar */}
+              <div className="pt-3 pb-1 flex items-center justify-end gap-2 border-t border-black/[0.06] dark:border-white/[0.06] sticky bottom-0 bg-white dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold btn-press cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold btn-press cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold btn-press cursor-pointer shadow-xs"
+                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs btn-press cursor-pointer shadow-sm shadow-amber-500/20"
                 >
                   {editingMealId ? 'Guardar Cambios' : 'Crear Plato'}
                 </button>
