@@ -965,7 +965,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   {duelOrigin === 'direct'
                     ? 'Has seleccionado este plato para comer hoy.'
                     : isPreparingRaffle 
-                    ? `Reuniendo tus ${likedCards.length} opciones favoritas...` 
+                    ? `Reuniendo tus ${likedCards.length} opciones...` 
                     : 'Sorteo aleatorio entre tus platos seleccionados.'}
                 </p>
               </div>
@@ -1017,7 +1017,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           ? 'Sorteando tu comida...' 
                           : duelOrigin === 'direct'
                           ? 'Plato elegido:' 
-                          : 'Salio sorteado:'}
+                          : 'Salió sorteado:'}
                       </span>
                       <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
                         {duelWinner.name}
