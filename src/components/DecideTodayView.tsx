@@ -64,21 +64,21 @@ interface DecideTodayViewProps {
 
 // Modalidades Dropdown Options
 const MODALITIES: { id: ModalityFilter; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Modalidad', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
-  { id: 'cooking', label: 'Cocinar en casa', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
-  { id: 'delivery', label: 'Pedir delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
+  { id: 'all', label: 'Tipo', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
+  { id: 'cooking', label: 'Cocinar', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
+  { id: 'delivery', label: 'Delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
 ];
 
 // Categorías Dropdown Options
 const CATEGORIES: { id: FoodCategoryFilter; label: string; icon: React.ReactNode }[] = [
   { id: 'all', label: 'Todas las categorías', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
   { id: 'quick', label: 'Rápido (<15 min)', icon: <Clock className="w-3.5 h-3.5 text-blue-500" /> },
-  { id: 'meat', label: 'Carnes & Parrilla', icon: <Flame className="w-3.5 h-3.5 text-rose-500" /> },
-  { id: 'pasta', label: 'Pastas & Olla', icon: <Utensils className="w-3.5 h-3.5 text-amber-500" /> },
-  { id: 'sandwiches', label: 'Sandwiches & Minutas', icon: <Layers className="w-3.5 h-3.5 text-orange-500" /> },
-  { id: 'empanadas', label: 'Empanadas & Entradas', icon: <Sparkles className="w-3.5 h-3.5 text-yellow-500" /> },
+  { id: 'meat', label: 'Carnes y Parrilla', icon: <Flame className="w-3.5 h-3.5 text-rose-500" /> },
+  { id: 'pasta', label: 'Pastas y Olla', icon: <Utensils className="w-3.5 h-3.5 text-amber-500" /> },
+  { id: 'sandwiches', label: 'Sandwiches y Minutas', icon: <Layers className="w-3.5 h-3.5 text-orange-500" /> },
+  { id: 'empanadas', label: 'Empanadas y Entradas', icon: <Sparkles className="w-3.5 h-3.5 text-yellow-500" /> },
   { id: 'protein', label: 'Alto en Proteína', icon: <Utensils className="w-3.5 h-3.5 text-emerald-500" /> },
-  { id: 'desserts', label: 'Postres & Golosinas', icon: <Cake className="w-3.5 h-3.5 text-pink-500" /> },
+  { id: 'desserts', label: 'Postres y Golosinas', icon: <Cake className="w-3.5 h-3.5 text-pink-500" /> },
   { id: 'cheat', label: 'Antojos', icon: <Flame className="w-3.5 h-3.5 text-purple-500" /> },
 ];
 
@@ -366,12 +366,12 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       <div className="flex items-center justify-between gap-3 pt-1">
         <div>
           <h2 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-1.5">
-            <span>¿QUÉ COMEMOS hoy?</span>
+            <span>¿Qué comemos hoy?</span>
           </h2>
           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
             {isDuelFeatureEnabled 
-              ? '20 platos al azar • Elige tus preferidos para el sorteo' 
-              : '20 platos al azar • Descarta, guarda lo que te tiente o elige directo'}
+              ? '20 opciones al azar · Elegí las que te gusten para el sorteo' 
+              : '20 opciones al azar · Descartá, marcá las que te gusten o elegí directo'}
           </p>
         </div>
 
@@ -653,14 +653,14 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                         : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
                     }`}>
                       {currentCard.type === 'cooking' ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
-                      <span>{currentCard.type === 'cooking' ? 'Cocinar en Casa' : 'Pedir Delivery'}</span>
+                      <span>{currentCard.type === 'cooking' ? 'Cocinar' : 'Delivery'}</span>
                     </span>
 
                     {/* Status Pill */}
                     {currentCardStatus === 'liked' && (
                       <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 animate-in fade-in">
                         <Check className="w-3 h-3 stroke-[3] text-emerald-600 dark:text-emerald-400" />
-                        <span>Te interesa</span>
+                        <span>Elegido</span>
                       </span>
                     )}
                     {currentCardStatus === 'rejected' && (
@@ -837,7 +837,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                         className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-sm btn-press cursor-pointer"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Buscar en App de Delivery</span>
+                        <span>Buscar en la app de delivery</span>
                       </button>
                     </div>
                   )}
@@ -858,7 +858,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               onClick={() => loadRandomBatch(true)}
               className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold"
             >
-              Cargar nuevos 20 platos
+              Cargar 20 platos nuevos
             </button>
           </div>
         )}
@@ -880,7 +880,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               title="Descartar este plato y avanzar"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
-              <span>{isCurrentlyRejected ? 'Descartado' : 'Rechazar'}</span>
+              <span>{isCurrentlyRejected ? 'Descartado' : 'Descartar'}</span>
             </button>
 
             {/* Like Button */}
@@ -949,7 +949,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   {duelOrigin === 'direct' ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
-                      <span>Plato Elegido Directamente</span>
+                      <span>Elegido directamente</span>
                     </>
                   ) : (
                     <>
@@ -959,7 +959,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   )}
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
-                  {duelOrigin === 'direct' ? '¡Plato Elegido!' : '¡Sorteo Final!'}
+                  {duelOrigin === 'direct' ? '¡Plato elegido!' : '¡Sorteo Final!'}
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   {duelOrigin === 'direct'
