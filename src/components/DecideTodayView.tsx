@@ -42,6 +42,8 @@ import {
   createFavoriteFromRecipe, 
   loadDuelThreshold,
   loadDuelEnabled,
+  loadPreferredModality,
+  savePreferredModality,
   getDeliverySearchUrl 
 } from '../utils/storage';
 import { sound } from '../utils/audio';
@@ -93,7 +95,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   onNavigatePantry,
 }) => {
   // Dropdown States
-  const [selectedModality, setSelectedModality] = useState<ModalityFilter>('all');
+  const [selectedModality, setSelectedModality] = useState<ModalityFilter>(() => loadPreferredModality());
   const [selectedCategory, setSelectedCategory] = useState<FoodCategoryFilter>('all');
   const [isModalityOpen, setIsModalityOpen] = useState<boolean>(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
@@ -122,6 +124,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   useBodyScrollLock(isDuelActive || isRaffleRequirementOpen);
 
   useEffect(() => {
+    setSelectedModality(loadPreferredModality());
     setDuelThreshold(loadDuelThreshold());
     setIsDuelFeatureEnabled(loadDuelEnabled());
   }, []);
@@ -427,6 +430,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                       onClick={() => {
                         sound.playClick(isSelected ? 600 : 850);
                         setSelectedModality(mod.id);
+                        savePreferredModality(mod.id);
                         setIsModalityOpen(false);
                         triggerHaptic('light');
                       }}

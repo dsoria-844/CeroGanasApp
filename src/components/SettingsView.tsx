@@ -19,6 +19,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { COMMON_EXCLUSIONS } from '../data/mealsData';
+import { ModalityFilter } from '../types';
 import { 
   saveExclusionsToStorage, 
   triggerHaptic, 
@@ -27,6 +28,8 @@ import {
   saveDuelThreshold,
   loadDuelEnabled,
   saveDuelEnabled,
+  loadPreferredModality,
+  savePreferredModality,
   loadDefaultDeliveryApp,
   saveDefaultDeliveryApp,
   DeliveryApp
@@ -61,13 +64,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [showClearSuccess, setShowClearSuccess] = useState(false);
   const [duelThreshold, setDuelThreshold] = useState<number>(5);
   const [isDuelEnabled, setIsDuelEnabled] = useState<boolean>(false);
+  const [preferredModality, setPreferredModality] = useState<ModalityFilter>('all');
   const [defaultDeliveryApp, setDefaultDeliveryApp] = useState<DeliveryApp>('pedidosya');
 
   useEffect(() => {
     setDuelThreshold(loadDuelThreshold());
     setIsDuelEnabled(loadDuelEnabled());
+    setPreferredModality(loadPreferredModality());
     setDefaultDeliveryApp(loadDefaultDeliveryApp());
   }, []);
+
+  const handleSelectModality = (mod: ModalityFilter) => {
+    sound.playClick(850);
+    triggerHaptic('light');
+    setPreferredModality(mod);
+    savePreferredModality(mod);
+  };
 
   const handleToggleDuelEnabled = () => {
     sound.playClick(isDuelEnabled ? 500 : 900);
@@ -285,7 +297,55 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         )}
       </div>
 
-      {/* SECCIÓN 2: APP DE DELIVERY PREDETERMINADA */}
+      {/* SECCIÓN 2: MODALIDAD PREDETERMINADA DE COMIDAS */}
+      <div className="apple-card p-6 sm:p-7 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <div>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Modalidad Predeterminada de Comidas</span>
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Configura qué tipo de opciones sugerir principalmente (solo cocinar, solo delivery o ambas)
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          {[
+            { id: 'all' as ModalityFilter, label: 'Ambas opciones', subtitle: 'Cocinar y Delivery', emoji: '🍽️' },
+            { id: 'cooking' as ModalityFilter, label: 'Solo Cocinar', subtitle: 'Solo recetas caseras', emoji: '🍳' },
+            { id: 'delivery' as ModalityFilter, label: 'Solo Delivery', subtitle: 'Solo locales para pedir', emoji: '🛵' },
+          ].map(opt => {
+            const isSelected = preferredModality === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => handleSelectModality(opt.id)}
+                className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all btn-press cursor-pointer border ${
+                  isSelected
+                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
+                    : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-850'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 text-left">
+                  <span className="text-xl">{opt.emoji}</span>
+                  <div>
+                    <p className="text-xs font-bold leading-tight">{opt.label}</p>
+                    <p className={`text-[10px] ${isSelected ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'}`}>
+                      {opt.subtitle}
+                    </p>
+                  </div>
+                </div>
+                {isSelected && <Check className="w-4 h-4 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SECCIÓN 3: APP DE DELIVERY PREDETERMINADA */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>

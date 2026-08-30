@@ -31,6 +31,7 @@ const STORAGE_KEYS = {
   CUSTOM_MEALS: 'que_como_custom_meals_v1',
   DEFAULT_DELIVERY_APP: 'que_como_default_delivery_app_v1',
   DELETED_MEALS: 'que_como_deleted_meals_v1',
+  PREFERRED_MODALITY: 'que_como_preferred_modality_v1',
 };
 
 export interface CustomMealsStorage {
@@ -184,6 +185,26 @@ export function loadDuelEnabled(): boolean {
 export function saveDuelEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(STORAGE_KEYS.DUEL_ENABLED, String(enabled));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadPreferredModality(): ModalityFilter {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.PREFERRED_MODALITY);
+    if (saved === 'all' || saved === 'cooking' || saved === 'delivery') {
+      return saved as ModalityFilter;
+    }
+  } catch {
+    // ignore
+  }
+  return 'all';
+}
+
+export function savePreferredModality(modality: ModalityFilter): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.PREFERRED_MODALITY, modality);
   } catch {
     // ignore
   }
@@ -1205,8 +1226,12 @@ export function pickBlindDecisionMeal(
   history: MealHistoryItem[],
   favorites: UserFavoriteMeal[]
 ): MealCardItem {
-  // Exclude desserts and sweets from "Tengo Hambre"
-  const allCards = getUnifiedCardDataset('all', 'all', exclusions, history, favorites);
+  // Exclude desserts and sweets from "Tengo Hambre" and respect preferred modality
+  const prefModality = loadPreferredModality();
+  let allCards = getUnifiedCardDataset(prefModality, 'all', exclusions, history, favorites);
+  if (allCards.length === 0) {
+    allCards = getUnifiedCardDataset('all', 'all', exclusions, history, favorites);
+  }
   const savoryCards = allCards.filter(card => {
     const isDessert = card.tags.some(t => /postre|golosina|helado|torta|dulce|alfajor|flan|panqueque|chocotorta/i.test(t)) ||
       (card.categoryLabel && /postre|dulce/i.test(card.categoryLabel));
