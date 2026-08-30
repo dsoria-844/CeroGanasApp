@@ -1061,7 +1061,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           onClick={() => handleOpenDelivery(duelWinner.name)}
                           className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 btn-press cursor-pointer shadow-md shadow-amber-500/20"
                         >
-                          <span>🛵 Abrir en app de delivery / Buscar</span>
+                          <span>Buscar en la app de delivery</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       ) : (
