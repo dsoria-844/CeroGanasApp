@@ -587,19 +587,19 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         <button
           onClick={handlePrev}
           disabled={currentIndex === 0}
-          className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
+          className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 dark:bg-zinc-900/95 border border-black/[0.1] dark:border-white/[0.15] shadow-xl backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-100 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
           title="Plato anterior"
         >
-          <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+          <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
         </button>
 
         {/* Next Arrow Button */}
         <button
           onClick={handleNext}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-black/[0.08] dark:border-white/[0.1] shadow-lg backdrop-blur-md flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
+          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 dark:bg-zinc-900/95 border border-black/[0.1] dark:border-white/[0.15] shadow-xl backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-100 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
           title="Siguiente plato"
         >
-          <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+          <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
         </button>
 
         {/* The Card with 3D Flip */}
