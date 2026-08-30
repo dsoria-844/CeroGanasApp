@@ -18,9 +18,7 @@ import {
   ChevronRight,
   Plus,
   Utensils,
-  HelpCircle,
-  Code2,
-  ExternalLink
+  HelpCircle
 } from 'lucide-react';
 import { AppTab, MealHistoryItem } from '../types';
 import { Theme } from '../utils/theme';
@@ -296,26 +294,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span>Desarrollador</span>
                     <span className="font-semibold text-zinc-800 dark:text-zinc-200">Diego Soria</span>
                   </div>
-
-                  <a
-                    href="https://github.com/dsoria-844"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      sound.playClick(800);
-                      triggerHaptic('light');
-                    }}
-                    className="flex items-center justify-between w-full pt-1.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Code2 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-amber-500 transition-colors" />
-                      <span>GitHub</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-zinc-400 group-hover:text-amber-500 transition-colors">
-                      <span className="text-[10px]">@dsoria-844</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </div>
-                  </a>
                 </div>
               </div>
             </div>
