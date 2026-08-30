@@ -611,19 +611,26 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             <motion.div
               key={currentCard.id}
               animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
               className="relative w-full h-full [transform-style:preserve-3d] select-none"
             >
               {/* FRONT FACE (PORTADA) */}
               <div 
-                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-hidden [backface-visibility:hidden] transition-all duration-300 ${
+                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-24 shadow-xl flex flex-col justify-between overflow-hidden transition-all duration-200 ${
                   currentCardStatus === 'liked'
                     ? 'bg-white dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
                     : currentCardStatus === 'rejected'
                     ? 'bg-white dark:bg-zinc-900 border-2 border-rose-500/70 shadow-rose-500/10'
                     : 'bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1]'
                 }`}
-                style={{ WebkitBackfaceVisibility: 'hidden' }}
+                style={{ 
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(0deg)',
+                  zIndex: isFlipped ? 0 : 2,
+                  opacity: isFlipped ? 0 : 1,
+                  pointerEvents: isFlipped ? 'none' : 'auto',
+                }}
               >
                 {/* Subtle Ambient status wash background */}
                 {currentCardStatus === 'liked' && (
@@ -731,14 +738,21 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
               {/* BACK FACE (RECETA / DETALLES) */}
               <div 
-                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-20 shadow-xl flex flex-col justify-between overflow-y-auto [transform:rotateY(180deg)] [backface-visibility:hidden] transition-all duration-300 ${
+                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-24 shadow-xl flex flex-col justify-between overflow-y-auto transition-all duration-200 ${
                   currentCardStatus === 'liked'
                     ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
                     : currentCardStatus === 'rejected'
                     ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-rose-500/70 shadow-rose-500/10'
                     : 'bg-zinc-50 dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1]'
                 }`}
-                style={{ WebkitBackfaceVisibility: 'hidden' }}
+                style={{ 
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  zIndex: isFlipped ? 2 : 0,
+                  opacity: isFlipped ? 1 : 0,
+                  pointerEvents: isFlipped ? 'auto' : 'none',
+                }}
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
