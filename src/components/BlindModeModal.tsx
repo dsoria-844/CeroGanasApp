@@ -136,7 +136,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
               ¡Tengo Hambre!
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Decisión instantánea definitiva sin fatiga mental.
+              Decisión al instante, sin pensar.
             </p>
           </div>
 
@@ -189,7 +189,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
 
               {/* Status subtext */}
               <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold tracking-wide animate-pulse">
-                {stage === 'thinking' ? 'Revisando opciones con cero ganas...' : '¡Elegida en 3 segundos!'}
+                {stage === 'thinking' ? 'Revisando opciones con cero ganas...' : '¡El chef decide en 3 segundos!'}
               </p>
             </motion.div>
           )}
@@ -210,7 +210,7 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
 
                 <div className="space-y-1">
                   <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
-                    Salio sorteado:
+                    Salió sorteado:
                   </span>
                   <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
                     {chosenMeal.name}
@@ -244,11 +244,11 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
                     onClick={handleOpenDelivery}
                     className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 btn-press cursor-pointer shadow-md shadow-amber-500/20"
                   >
-                    <span>🛵 Abrir en app de delivery / Buscar</span>
+                    <span>Buscar en la app de delivery</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  chosenMeal.recipe && onOpenRecipeModal && (
+                  chosenMeal.type === 'cooking' && onOpenRecipeModal && (
                     <button
                       id="btn-blind-view-recipe"
                       onClick={() => {

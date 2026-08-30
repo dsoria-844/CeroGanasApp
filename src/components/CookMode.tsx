@@ -628,7 +628,7 @@ export const CookMode: React.FC<CookModeProps> = ({
                         {topMatch.recipe.difficulty}
                       </span>
                       <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/20">
-                        {topMatch.matchPercentage}% Coincidencia
+                        {topMatch.matchPercentage}% de ingredientes
                       </span>
                     </div>
                     <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">

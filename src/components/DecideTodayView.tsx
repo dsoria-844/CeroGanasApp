@@ -420,7 +420,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 className="absolute left-0 right-0 top-full mt-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl z-50 space-y-0.5"
               >
                 <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">
-                  Modalidad
+                  Tipo
                 </div>
                 {MODALITIES.map(mod => {
                   const isSelected = selectedModality === mod.id;
@@ -767,7 +767,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           {currentCard.name}
                         </h4>
                         <span className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
-                          {currentCard.type === 'cooking' ? 'Receta Casera' : 'Detalles de Delivery'}
+                          {currentCard.type === 'cooking' ? 'Receta casera' : 'Detalles de delivery'}
                         </span>
                       </div>
                     </div>
@@ -877,7 +877,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   ? 'bg-rose-600 text-white dark:bg-rose-600 dark:text-white shadow-sm shadow-rose-500/20 ring-2 ring-rose-500/50'
                   : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40'
               }`}
-              title="Descartar este plato y avanzar"
+              title="Descartar este plato"
             >
               <X className="w-4 h-4 stroke-[2.5]" />
               <span>{isCurrentlyRejected ? 'Descartado' : 'Descartar'}</span>
@@ -891,7 +891,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950 font-bold shadow-emerald-500/20 ring-2 ring-emerald-500/50'
                   : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
               }`}
-              title="Marcar como 'Me interesa' para el sorteo final"
+              title="Marcar como «Me interesa»"
             >
               <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
               <span>{isCurrentlyLiked ? 'Te interesa' : 'Me interesa'}</span>
@@ -902,7 +902,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               id="btn-direct-choose"
               onClick={handleDirectSelect}
               className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
-              title="Elegir este plato directamente hoy"
+              title="Elegir este plato ahora"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>Elegir</span>
@@ -995,7 +995,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   </div>
 
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold tracking-wide animate-pulse">
-                    Reuniendo tus {likedCards.length} opciones favoritas...
+                    Reuniendo tus {likedCards.length} opciones...
                   </p>
                 </motion.div>
               ) : duelWinner && (
@@ -1030,7 +1030,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200'
                           : 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
                       }`}>
-                        {duelWinner.type === 'cooking' ? '🍳 Cocinar en Casa' : '🛵 Pedir Delivery'}
+                        {duelWinner.type === 'cooking' ? '🍳 Cocinar' : '🛵 Delivery'}
                       </span>
                       <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
                         ⏱️ {duelWinner.timeEstimate}
@@ -1065,7 +1065,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       ) : (
-                        duelWinner.recipe && onOpenRecipeModal && (
+                        duelWinner.type === 'cooking' && onOpenRecipeModal && (
                           <button
                             id="btn-duel-view-recipe"
                             onClick={() => {
@@ -1146,7 +1146,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               <div className="flex flex-col items-center justify-center gap-1.5 pt-1">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
                   <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  <span>Sorteo de Platos Elegidos</span>
+                  <span>Sorteo de platos elegidos</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
                   ¡Aún no has elegido platos!
@@ -1165,10 +1165,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
               {/* Explanation Text */}
               <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed px-1">
                 <p>
-                  Para realizar este sorteo debes seleccionar al menos <strong>{duelThreshold} platos</strong> con el botón <strong>"Me interesa"</strong> o deslizando hacia la derecha.
+                  Para sortear, elegí al menos <strong>{duelThreshold} platos</strong> con el botón <strong>«Me interesa»</strong>.
                 </p>
                 <p className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-500/20 p-2.5 rounded-xl font-medium">
-                  💡 ¿No deseas elegir platos? Presiona el botón <strong>"¡Tengo Hambre!"</strong> en la barra superior para realizar un sorteo directo inmediato.
+                  💡 ¿No querés elegir? Tocá <strong>«¡Tengo Hambre!»</strong> y decidí al instante.
                 </p>
               </div>
 
@@ -1183,7 +1183,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
                 >
                   <Zap className="w-4 h-4 fill-current" />
-                  <span>¡Tengo Hambre! (Sorteo directo)</span>
+                  <span>¡Tengo Hambre! (sorteo directo)</span>
                 </button>
 
                 <button
@@ -1193,7 +1193,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   }}
                   className="w-full py-2.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-black/[0.06] dark:border-white/[0.06] btn-press cursor-pointer transition-colors"
                 >
-                  <span>Entendido, seguiré eligiendo platos</span>
+                  <span>Entendido, seguiré eligiendo</span>
                 </button>
               </div>
             </motion.div>

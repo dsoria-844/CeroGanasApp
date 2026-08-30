@@ -1,7 +1,7 @@
 {
   "short_name": "Cero Ganas",
-  "name": "Cero Ganas - Decisor Inteligente",
-  "description": "Tu asistente definitivo para resolver la fatiga de decisión diaria: delivery y recetas sin vueltas.",
+  "name": "Cero Ganas - ¿Qué comemos hoy?",
+  "description": "¿Qué comer hoy? Delivery y recetas sin vueltas ni complicaciones.",
   "icons": [
     {
       "src": "./cero-ganas-logo.jpg",

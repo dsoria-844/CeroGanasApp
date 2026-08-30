@@ -198,7 +198,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
           {searchResults.length === 0 ? (
             <div className="p-8 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] text-center space-y-3">
               <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                No encontramos "{inputText}" en los platos pre-cargados
+                No encontramos "{inputText}" en los platos cargados
               </p>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
                 ¿Quieres guardarlo como plato personalizado con este nombre?
@@ -352,7 +352,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                   Sin platos favoritos aún
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-                  Busca entre todos los platos precargados arriba o añade alguna de las sugerencias populares.
+                  Busca entre todos los platos cargados arriba o añade alguna de las sugerencias populares.
                 </p>
               </div>
 
@@ -522,7 +522,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                 Mis Platos Favoritos
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
-                Tus comidas predilectas para la ruleta y sorteos
+                Tus comidas predilectas para los sorteos
               </p>
             </div>
           </div>

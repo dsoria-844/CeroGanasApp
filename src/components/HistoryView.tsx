@@ -93,7 +93,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             <span>Historial de Comidas</span>
           </h2>
           <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-            Trazabilidad y registro de lo que comiste
+            Todo lo que comiste, en un solo lugar
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           {/* Modality Filter */}
           <div className="flex items-center gap-1">
             <span className="text-[10px] uppercase font-bold text-zinc-400 mr-1 hidden sm:inline">
-              Modalidad:
+              Tipo:
             </span>
             {[
               { id: 'all', label: 'Todas' },
@@ -243,7 +243,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             <p className="text-xs">
               {history.length > 0
                 ? 'Ninguna comida coincide con los filtros seleccionados.'
-                : 'Acepta comidas en el módulo de decisión para comenzar tu registro.'}
+                : 'Elegí comidas en la pantalla principal para empezar a registrar.'}
             </p>
           </div>
         ) : (

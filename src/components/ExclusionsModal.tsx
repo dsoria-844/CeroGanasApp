@@ -89,10 +89,10 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
               </div>
               <div>
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  Lista Negra & Exclusiones
+                  Alimentos a evitar
                 </h3>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-                  Ingredientes que jamás deben sugerirse
+                  Nada de esto aparecerá en tus sugerencias
                 </p>
               </div>
             </div>
@@ -115,14 +115,14 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
             <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                Cualquier comida de delivery o receta casera que contenga estos ingredientes quedará <strong className="text-zinc-900 dark:text-zinc-100">bloqueada permanentemente</strong> en tus decisiones.
+                Ninguna comida con estos ingredientes aparecerá en tus sugerencias.
               </p>
             </div>
 
             {/* Quick Common Toggles */}
             <div className="space-y-2">
               <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-                Exclusiones comunes & alérgenos:
+                Alimentos comunes y alérgenos:
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {COMMON_EXCLUSIONS.map(exc => {
@@ -180,7 +180,7 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-                  Exclusiones activas ({exclusions.length}):
+                  Alimentos evitados ({exclusions.length}):
                 </label>
                 {exclusions.length > 0 && (
                   <button

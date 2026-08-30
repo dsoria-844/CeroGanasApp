@@ -129,25 +129,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-            className="relative z-10 w-4/5 max-w-xs h-full bg-white dark:bg-zinc-900 border-r border-black/[0.08] dark:border-white/[0.08] p-6 shadow-2xl flex flex-col justify-between overflow-y-auto"
+            className="relative z-10 w-4/5 max-w-xs h-full bg-white dark:bg-zinc-900 border-r border-black/[0.08] dark:border-white/[0.08] p-4 sm:p-5 shadow-2xl flex flex-col justify-between overflow-hidden"
           >
-            {/* Top Brand Mascot Header */}
-            <div className="space-y-5">
-              <div className="relative p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 flex items-center justify-between gap-2.5">
+            {/* Top Brand Mascot Header & Nav */}
+            <div className="space-y-3">
+              <div className="relative p-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 flex items-center justify-between gap-2">
                 <div className="space-y-0.5 min-w-0">
-                  <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                  <h2 className="text-xs font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
                     ¿Cero ganas hoy?
                   </h2>
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    ¡Tu chef perezoso decide por ti!
+                    ¡Tu chef perezoso decide por vos!
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   <img
                     src="./sidebar-sloth.jpg"
                     alt="Chef Cero Ganas"
-                    className="w-12 h-12 rounded-xl object-cover"
+                    className="w-10 h-10 rounded-xl object-cover"
                   />
                   <button
                     id="btn-close-sidebar"
@@ -155,17 +155,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       sound.playClick(600);
                       onClose();
                     }}
-                    className="p-1.5 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 btn-press cursor-pointer transition-colors"
+                    className="p-1 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 btn-press cursor-pointer transition-colors"
                     title="Cerrar menú"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
               {/* Main Navigation Links */}
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-3 pb-1">
+              <div className="space-y-0.5">
+                <p className="text-[9px] uppercase font-semibold tracking-wider text-zinc-400 px-2.5 pb-0.5">
                   Navegación
                 </p>
 
@@ -175,19 +175,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <button
                       key={item.id}
                       onClick={() => handleNav(item.id)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all btn-press cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all btn-press cursor-pointer ${
                         isActive
-                          ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-md shadow-amber-500/20'
+                          ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-sm shadow-amber-500/20'
                           : 'text-zinc-600 dark:text-zinc-400 font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         {item.icon}
                         <span>{item.label}</span>
                       </div>
 
                       {item.badge !== undefined && (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold ${
                           isActive
                             ? 'bg-zinc-950/15 text-zinc-950'
                             : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
@@ -201,9 +201,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
 
               {/* Quick Actions & Help Section */}
-              <div className="space-y-1 pt-3 border-t border-black/[0.06] dark:border-white/[0.06]">
-                <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-3 pb-1">
-                  Acciones & Guía
+              <div className="space-y-0.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+                <p className="text-[9px] uppercase font-semibold tracking-wider text-zinc-400 px-2.5 pb-0.5">
+                  Acciones y guía
                 </p>
 
                 {/* Tengo Hambre Button */}
@@ -213,10 +213,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenBlindMode();
                     onClose();
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Zap className="w-4 h-4 text-amber-500 fill-current" />
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-current" />
                     <span>¡Tengo Hambre!</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
@@ -230,10 +230,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenHelp();
                     onClose();
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <HelpCircle className="w-4 h-4 text-emerald-500" />
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Ayuda (Cómo funciona)</span>
                   </div>
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
@@ -242,87 +242,112 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Bottom Controls & About Section */}
-            <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
-              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
-                  {theme === 'light' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-zinc-400" />}
-                  <span>Modo {theme === 'light' ? 'Claro' : 'Oscuro'}</span>
-                </div>
-
+            <div className="pt-2.5 border-t border-black/[0.06] dark:border-white/[0.06] space-y-2">
+              {/* Quick Settings Bar: Theme & Sound */}
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
                   onClick={() => {
                     sound.playClick(600);
                     onToggleTheme();
                   }}
-                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
+                  className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 btn-press cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
-                  Cambiar
+                  <div className="flex items-center gap-1.5">
+                    {theme === 'light' ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-zinc-400" />}
+                    <span className="text-[11px]">{theme === 'light' ? 'Claro' : 'Oscuro'}</span>
+                  </div>
+                  <span className="text-[9px] text-zinc-400">Tema</span>
                 </button>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pl-1">
-                  {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-500" /> : <VolumeX className="w-4 h-4 text-zinc-400" />}
-                  <span>Efectos Sonoros</span>
-                </div>
 
                 <button
                   onClick={() => {
                     sound.playClick(soundEnabled ? 400 : 900);
                     onToggleSound();
                   }}
-                  className="px-3 py-1 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
+                  className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300 btn-press cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
-                  {soundEnabled ? 'Activado' : 'Silencio'}
+                  <div className="flex items-center gap-1.5">
+                    {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-500" /> : <VolumeX className="w-3.5 h-3.5 text-zinc-400" />}
+                    <span className="text-[11px]">{soundEnabled ? 'Sonido' : 'Mudo'}</span>
+                  </div>
+                  <span className="text-[9px] text-zinc-400">Audio</span>
                 </button>
               </div>
 
               {/* Acerca de Section */}
-              <div className="space-y-1 pt-1.5 border-t border-black/[0.06] dark:border-white/[0.06]">
-                <p className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 px-1 pb-0.5">
+              <div className="space-y-0.5">
+                <p className="text-[9px] uppercase font-semibold tracking-wider text-zinc-400 px-1">
                   Acerca de
                 </p>
 
-                <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-900 dark:text-zinc-50">Cero Ganas</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
-                      v1.0.1
-                    </span>
+                <div className="p-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] flex items-center gap-3">
+                  {/* Columna 1: Imagen de Cero Ganas */}
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-amber-500/10 border border-black/[0.06] dark:border-white/[0.08] shrink-0 shadow-2xs flex items-center justify-center">
+                    <img
+                      src="./about-mascot.jpg"
+                      alt="Cero Ganas Chef"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center justify-between pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
-                    <span>Desarrollador</span>
-                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">Diego Soria</span>
-                  </div>
-
-                  {/* Apoyá el proyecto */}
-                  <a
-                    href="https://cafecito.app/diego_soria"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      sound.playClick(850);
-                      triggerHaptic('medium');
-                    }}
-                    className="flex items-center justify-between w-full p-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30 text-amber-900 dark:text-amber-100 transition-all btn-press cursor-pointer group"
-                    title="Apoyá el proyecto con un cafecito"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">☕</span>
-                      <div className="text-left">
-                        <p className="text-[11px] font-bold leading-tight flex items-center gap-1">
-                          <span>Apoyá el proyecto</span>
-                        </p>
-                        <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">
-                          Invitame un cafecito
-                        </p>
+                  {/* Columna 2: Textos (Nombre, Versión, Desarrollador) */}
+                  <div className="flex-1 min-w-0 space-y-1 text-xs">
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-extrabold text-xs text-zinc-900 dark:text-zinc-50 tracking-tight">
+                          Cero Ganas
+                        </span>
+                        <span className="px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[9px] font-mono font-bold border border-amber-500/30">
+                          v1.0.1
+                        </span>
                       </div>
+                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        Decidí qué comer hoy
+                      </p>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                  </a>
+
+                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400 pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
+                      <span className="text-zinc-400 text-[9px] uppercase font-semibold tracking-wider block">
+                        Desarrollador
+                      </span>
+                      <span className="font-bold text-zinc-800 dark:text-zinc-200 text-[11px]">
+                        Diego Soria
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Apoyá el proyecto (Donaciones) */}
+              <a
+                href="https://cafecito.app/diego_soria"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  sound.playClick(850);
+                  triggerHaptic('medium');
+                }}
+                className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/30 flex items-center justify-between gap-2.5 text-zinc-900 dark:text-zinc-50 transition-all btn-press cursor-pointer group shadow-2xs"
+                title="Invitame un cafecito en Cafecito.app"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm shrink-0 border border-amber-500/30">
+                    ☕
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-[11px] font-bold text-amber-950 dark:text-amber-100 leading-tight">
+                      Invitame un cafecito
+                    </p>
+                    <p className="text-[9px] text-amber-800/80 dark:text-amber-300/80 leading-tight truncate">
+                      Ayudá a mantener y mejorar la app
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 text-amber-700 dark:text-amber-300 group-hover:translate-x-0.5 transition-transform shrink-0">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </div>
+              </a>
             </div>
           </motion.div>
         </div>

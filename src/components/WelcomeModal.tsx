@@ -148,7 +148,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                 </div>
                 <div className="text-left">
                   <span className="block font-bold">Despensa Inteligente</span>
-                  <span className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Match por ingredientes</span>
+                   <span className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Recetas con lo que tienes</span>
                 </div>
               </div>
               <span className="text-xs text-zinc-400">→</span>

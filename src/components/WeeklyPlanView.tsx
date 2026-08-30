@@ -125,7 +125,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
             </h2>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Menú equilibrado de Lunes a Domingo con almuerzos y cenas organizadas.
+            Almuerzos y cenas para toda la semana.
           </p>
         </div>
 
@@ -167,7 +167,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                   <button
                     onClick={() => handleRerollSlot(dayIdx, 'lunch')}
                     className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors btn-press cursor-pointer"
-                    title="Re-sortear este almuerzo"
+                    title="Cambiar este almuerzo"
                   >
                     <RotateCcw className="w-3 h-3" />
                   </button>
@@ -205,7 +205,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                     }`}
                   >
                     <Check className="w-2.5 h-2.5" />
-                    <span>{day.lunch.isEaten ? 'Listo' : 'Comer'}</span>
+                    <span>{day.lunch.isEaten ? 'Listo' : 'Comí'}</span>
                   </button>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                   <button
                     onClick={() => handleRerollSlot(dayIdx, 'dinner')}
                     className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors btn-press cursor-pointer"
-                    title="Re-sortear esta cena"
+                    title="Cambiar esta cena"
                   >
                     <RotateCcw className="w-3 h-3" />
                   </button>
@@ -257,7 +257,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                     }`}
                   >
                     <Check className="w-2.5 h-2.5" />
-                    <span>{day.dinner.isEaten ? 'Listo' : 'Comer'}</span>
+                    <span>{day.dinner.isEaten ? 'Listo' : 'Comí'}</span>
                   </button>
                 </div>
               </div>

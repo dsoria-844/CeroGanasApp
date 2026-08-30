@@ -15,12 +15,12 @@ import { MealConfirmedModal } from './components/MealConfirmedModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
 import { FavoritesModal } from './components/FavoritesModal';
-import { MealHistoryItem, UserFavoriteMeal, AppTab, Recipe } from './types';
+import { MealHistoryItem, UserFavoriteMeal, AppTab, Recipe, MealCardItem } from './types';
+import { RECIPES_DATASET } from './data/mealsData';
 import { 
   loadSavedPantry, 
   loadMealHistory, 
   loadExclusions, 
-  loadRerollsState, 
   addMealToHistory, 
   deleteMealFromHistory, 
   clearMealHistory,
@@ -42,7 +42,6 @@ export default function App() {
   const [history, setHistory] = useState<MealHistoryItem[]>([]);
   const [exclusions, setExclusions] = useState<string[]>([]);
   const [favorites, setFavorites] = useState<UserFavoriteMeal[]>([]);
-  const [remainingRerolls, setRemainingRerolls] = useState<number>(3);
   
   // Modals
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
@@ -79,9 +78,6 @@ export default function App() {
     setHistory(loadMealHistory());
     setExclusions(loadExclusions());
     setFavorites(loadUserFavorites());
-    
-    const rerollState = loadRerollsState();
-    setRemainingRerolls(rerollState.remaining);
 
     // Check if user has already seen welcome screen
     const seenWelcome = localStorage.getItem('cero_ganas_welcome_seen');
@@ -133,8 +129,46 @@ export default function App() {
     setFavorites(updated);
   };
 
-  const handleOpenRecipe = (recipe: Recipe) => {
-    setViewingRecipe(recipe);
+  const handleOpenRecipe = (recipeOrItem: Recipe | MealCardItem | null) => {
+    if (!recipeOrItem) return;
+    if ('recipe' in recipeOrItem && recipeOrItem.recipe) {
+      setViewingRecipe(recipeOrItem.recipe);
+      return;
+    }
+    if ('steps' in recipeOrItem && Array.isArray((recipeOrItem as Recipe).steps)) {
+      setViewingRecipe(recipeOrItem as Recipe);
+      return;
+    }
+    const found = RECIPES_DATASET.find(
+      r => r.name.toLowerCase().trim() === recipeOrItem.name.toLowerCase().trim()
+    );
+    if (found) {
+      setViewingRecipe(found);
+      return;
+    }
+    const fallbackRecipe: Recipe = {
+      id: recipeOrItem.id || 'recipe_' + Date.now(),
+      name: recipeOrItem.name,
+      category: 'Casero',
+      prepTime: 10,
+      cookTime: 15,
+      difficulty: 'Fácil',
+      tags: ('tags' in recipeOrItem && Array.isArray(recipeOrItem.tags)) ? recipeOrItem.tags : ['Casero'],
+      ingredientsSummary: ('ingredientsSummary' in recipeOrItem && Array.isArray(recipeOrItem.ingredientsSummary)) ? recipeOrItem.ingredientsSummary : [],
+      allIngredientsFormatted: ('ingredientsSummary' in recipeOrItem && Array.isArray(recipeOrItem.ingredientsSummary) && recipeOrItem.ingredientsSummary.length > 0)
+        ? recipeOrItem.ingredientsSummary.map(name => ({ id: name.toLowerCase().replace(/\s+/g, '_'), name, amount: 'Al gusto' }))
+        : [{ id: 'ing_1', name: 'Ingredientes principales', amount: 'Al gusto' }],
+      steps: [
+        'Preparar y organizar los ingredientes en la mesa de trabajo.',
+        'Cocinar a fuego medio siguiendo la técnica recomendada.',
+        'Servir caliente y disfrutar de este riquísimo plato casero.'
+      ],
+      imageEmoji: recipeOrItem.imageEmoji || '🍳',
+      caloriesApprox: ('caloriesApprox' in recipeOrItem && typeof recipeOrItem.caloriesApprox === 'number') ? recipeOrItem.caloriesApprox : 450,
+      nutritionHighlight: 'Plato equilibrado y nutritivo.',
+      chefTip: 'Podés ajustar los condimentos a tu gusto personal.'
+    };
+    setViewingRecipe(fallbackRecipe);
   };
 
   // Ensure scroll is immediately reset to top on tab changes
@@ -294,8 +328,6 @@ export default function App() {
               <SettingsView
                 exclusions={exclusions}
                 onUpdateExclusions={updated => setExclusions(updated)}
-                remainingRerolls={remainingRerolls}
-                onUpdateRerolls={count => setRemainingRerolls(count)}
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
                 soundEnabled={soundEnabled}

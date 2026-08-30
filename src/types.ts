@@ -83,8 +83,6 @@ export interface AppState {
   favorites: UserFavoriteMeal[];
   excludedIngredients: string[];
   excludedTags: string[];
-  remainingRerolls: number;
-  lastRerollDate: string;
 }
 
 export type AppTab = 'decide' | 'weekly' | 'pantry' | 'favorites' | 'history' | 'create_meal' | 'settings';

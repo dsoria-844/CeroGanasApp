@@ -88,7 +88,7 @@ export const CreateMealView: React.FC = () => {
   const [timeEstimate, setTimeEstimate] = useState('20');
   const [mealCategory, setMealCategory] = useState<string>('Carnes & Minutas');
   const [tagsInput, setTagsInput] = useState('');
-  const [difficulty, setDifficulty] = useState<'Fácil' | 'Media' | 'Rápida'>('Fácil');
+  const [difficulty, setDifficulty] = useState<'Fácil' | 'Media' | 'Difícil'>('Fácil');
   const [step1, setStep1] = useState('');
   const [step2, setStep2] = useState('');
   const [step3, setStep3] = useState('');
@@ -640,7 +640,7 @@ export const CreateMealView: React.FC = () => {
                       className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
                     >
                       <option value="Fácil">Fácil</option>
-                      <option value="Rápida">Rápida</option>
+                      <option value="Difícil">Difícil</option>
                       <option value="Media">Media</option>
                     </select>
                   </div>
@@ -668,7 +668,7 @@ export const CreateMealView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    placeholder="rapido, cena..."
+                    placeholder="rápido, cena..."
                     value={tagsInput}
                     onChange={e => setTagsInput(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"

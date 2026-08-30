@@ -5,14 +5,12 @@ import {
   Plus, 
   X, 
   AlertCircle, 
-  RotateCw, 
   Trash2, 
   Sun, 
   Moon, 
   Volume2, 
   VolumeX, 
   Check,
-  RotateCcw,
   Sparkles,
   Trophy,
   Bike,
@@ -23,7 +21,6 @@ import { ModalityFilter } from '../types';
 import { 
   saveExclusionsToStorage, 
   triggerHaptic, 
-  resetRerollsToMax,
   loadDuelThreshold,
   saveDuelThreshold,
   loadDuelEnabled,
@@ -40,8 +37,6 @@ import { sound } from '../utils/audio';
 interface SettingsViewProps {
   exclusions: string[];
   onUpdateExclusions: (newExclusions: string[]) => void;
-  remainingRerolls: number;
-  onUpdateRerolls: (count: number) => void;
   theme: Theme;
   onToggleTheme: () => void;
   soundEnabled: boolean;
@@ -52,8 +47,6 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   exclusions,
   onUpdateExclusions,
-  remainingRerolls,
-  onUpdateRerolls,
   theme,
   onToggleTheme,
   soundEnabled,
@@ -146,13 +139,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     saveExclusionsToStorage([]);
   };
 
-  const handleResetRerolls = () => {
-    sound.playSuccess();
-    triggerHaptic('success');
-    const count = resetRerollsToMax();
-    onUpdateRerolls(count);
-  };
-
   const handleClearHistoryClick = () => {
     sound.playClick(450);
     triggerHaptic('medium');
@@ -169,7 +155,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           Configuración
         </h2>
         <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-          Ajustes generales, bloqueos de alimentos y preferencias de la aplicación
+          Ajustes generales, alimentos a evitar y preferencias de la app
         </p>
       </div>
 
@@ -179,10 +165,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-500" />
-              <span>Platos a Acumular para Sorteo</span>
+              <span>Sorteo automático</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              El botón de sortear siempre está disponible. Aquí puedes activar o desactivar el disparo automático al acumular cierta cantidad de platos.
+              Podés activar que el sorteo empiece solo cuando juntés cierta cantidad de platos.
             </p>
           </div>
         </div>
@@ -191,12 +177,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
           <div className="space-y-0.5">
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-              Activar meta de platos a acumular
+              Activar sorteo automático
             </span>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               {isDuelEnabled
-                ? `El sorteo iniciará automáticamente al marcar ${duelThreshold} platos con "Me interesa"`
-                : 'Deshabilitado: el sorteo solo se realiza cuando tocas el botón "Sortear"'}
+                ? `El sorteo empezará automáticamente al marcar ${duelThreshold} platos con «Me interesa»`
+                : 'Desactivado: el sorteo solo se realiza cuando tocás el botón «Sortear»'}
             </p>
           </div>
 
@@ -206,7 +192,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className={`w-12 h-7 rounded-full transition-colors relative flex items-center p-1 cursor-pointer btn-press shrink-0 ${
               isDuelEnabled ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-700'
             }`}
-            title={isDuelEnabled ? 'Desactivar meta de acumulación' : 'Activar meta de acumulación'}
+            title={isDuelEnabled ? 'Desactivar sorteo automático' : 'Activar sorteo automático'}
           >
             <motion.div
               animate={{ x: isDuelEnabled ? 20 : 0 }}
@@ -303,10 +289,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Modalidad Predeterminada de Comidas</span>
+              <span>Preferencia de comida</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Configura qué tipo de opciones sugerir principalmente (solo cocinar, solo delivery o ambas)
+              Elegí qué opciones querés ver: cocinar, delivery o ambas
             </p>
           </div>
         </div>
@@ -351,10 +337,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <Bike className="w-4 h-4 text-amber-500" />
-              <span>Aplicación de Delivery Predeterminada</span>
+              <span>App de delivery preferida</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Elige en qué plataforma buscar y pedir cuando selecciones delivery
+              Elegí en qué plataforma buscar cuando selecciones delivery
             </p>
           </div>
         </div>
@@ -398,10 +384,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-red-500" />
-              <span>Bloqueos & Exclusiones</span>
+              <span>Alimentos a evitar</span>
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Ingredientes que la app omitirá por completo en todas las sugerencias
+              Estos alimentos no aparecerán en ninguna sugerencia
             </p>
           </div>
         </div>
@@ -409,7 +395,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Common Exclusions Grid */}
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-            Ingredientes frecuentes para bloquear:
+            Alimentos comunes:
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {COMMON_EXCLUSIONS.map(item => {
@@ -439,7 +425,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Custom Input */}
         <form onSubmit={handleAddCustom} className="space-y-2 pt-2">
           <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-            Agregar ingrediente personalizado:
+            Agregar otro alimento:
           </label>
           <div className="flex gap-2">
             <input
@@ -464,7 +450,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
           <div className="flex items-center justify-between">
             <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
-              Ingredientes bloqueados activos ({exclusions.length}):
+              Alimentos evitados ({exclusions.length}):
             </label>
             {exclusions.length > 0 && (
               <button
@@ -478,7 +464,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           {exclusions.length === 0 ? (
             <p className="text-xs text-zinc-400 italic py-1">
-              No tienes ingredientes bloqueados. Se incluirán todas las recetas y menús.
+              No evitas ningún alimento. Se mostrarán todas las opciones.
             </p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
@@ -504,7 +490,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* SECCIÓN 4: PREFERENCIAS DE INTERFAZ & SONIDO */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
-          Preferencias de Interfaz & Sonido
+          Apariencia y sonido
         </h3>
 
         {/* Theme Preference */}
@@ -515,10 +501,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div>
               <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                Tema de Color
+                Tema
               </p>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Modo actual: {theme === 'light' ? 'Claro (Apple Minimal)' : 'Oscuro (OLED)'}
+                Modo actual: {theme === 'light' ? 'Claro' : 'Oscuro'}
               </p>
             </div>
           </div>
@@ -542,10 +528,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div>
               <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                Efectos Sonoros & Clics
+                Sonidos
               </p>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                {soundEnabled ? 'Sonidos de clics y sorteo habilitados' : 'Aplicación en silencio'}
+                {soundEnabled ? 'Sonidos activados' : 'Sonidos desactivados'}
               </p>
             </div>
           </div>
@@ -561,41 +547,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-black/[0.08] dark:border-white/[0.08]'
             }`}
           >
-            {soundEnabled ? 'Habilitado' : 'Deshabilitado'}
+            {soundEnabled ? 'Activado' : 'Desactivado'}
           </button>
         </div>
       </div>
 
-      {/* SECCIÓN 5: GESTIÓN DE DATOS & RULETA */}
+      {/* SECCIÓN 5: GESTIÓN DE DATOS */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
-          Gestión de Datos & Ruleta
+          Datos
         </h3>
-
-        {/* Reset Rerolls */}
-        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-300 shadow-xs">
-              <RotateCw className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                Giros Diarios de Ruleta
-              </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Disponibles: {remainingRerolls} de 3 giros diarios
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleResetRerolls}
-            className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer flex items-center gap-1"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Restablecer (3)</span>
-          </button>
-        </div>
 
         {/* Clear Meal History */}
         <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06]">
@@ -605,10 +566,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div>
               <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                Historial de Comidas
+                Historial de comidas
               </p>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Borrar todos los registros de comidas guardadas
+                Elimina todo lo que comiste registrado
               </p>
             </div>
           </div>

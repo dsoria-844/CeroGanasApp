@@ -23,7 +23,6 @@ const STORAGE_KEYS = {
   CUSTOM_PANTRY: 'que_como_custom_pantry_v1',
   HISTORY: 'que_como_history_v1',
   EXCLUSIONS: 'que_como_exclusions_v1',
-  REROLLS: 'que_como_rerolls_v1',
   FAVORITES: 'que_como_favorites_v1',
   WEEKLY_PLAN: 'que_como_weekly_plan_v1',
   DUEL_THRESHOLD: 'que_como_duel_threshold_v1',
@@ -147,7 +146,6 @@ export function getAllCatalogMeals(): { delivery: DeliveryOption[]; recipes: Rec
 }
 
 const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
-const MAX_DAILY_REROLLS = 3;
 
 export function loadDuelThreshold(): number {
   try {
@@ -488,39 +486,6 @@ export function saveExclusionsToStorage(exclusions: string[]) {
   } catch (e) {
     console.error('Error saving exclusions:', e);
   }
-}
-
-export function loadRerollsState(): { remaining: number; date: string } {
-  const today = getTodayDateString();
-  try {
-    const saved = localStorage.getItem(STORAGE_KEYS.REROLLS);
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.date === today) {
-        return data;
-      }
-    }
-  } catch (e) {
-    console.error('Error loading rerolls:', e);
-  }
-  const fresh = { remaining: MAX_DAILY_REROLLS, date: today };
-  localStorage.setItem(STORAGE_KEYS.REROLLS, JSON.stringify(fresh));
-  return fresh;
-}
-
-export function decrementRerolls(): number {
-  const state = loadRerollsState();
-  const updatedRemaining = Math.max(0, state.remaining - 1);
-  const updated = { remaining: updatedRemaining, date: state.date };
-  localStorage.setItem(STORAGE_KEYS.REROLLS, JSON.stringify(updated));
-  return updatedRemaining;
-}
-
-export function resetRerollsToMax(): number {
-  const today = getTodayDateString();
-  const reset = { remaining: MAX_DAILY_REROLLS, date: today };
-  localStorage.setItem(STORAGE_KEYS.REROLLS, JSON.stringify(reset));
-  return MAX_DAILY_REROLLS;
 }
 
 // --- FAVORITES ENGINE & STORAGE ---

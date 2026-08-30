@@ -26,17 +26,37 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
 }) => {
   if (!isOpen || !recipe) return null;
 
-  const isFav = isMealFavorited(recipe.name, favorites);
+  // Defensive unwrapping in case a card or nested recipe was passed
+  const activeRecipe: Recipe = (recipe as any).recipe || recipe;
+  const ingredients = activeRecipe.allIngredientsFormatted && activeRecipe.allIngredientsFormatted.length > 0
+    ? activeRecipe.allIngredientsFormatted
+    : (activeRecipe.ingredientsSummary || []).map((name: string, i: number) => ({
+        id: `ing_${i}`,
+        name,
+        amount: 'Al gusto'
+      }));
+
+  const steps = activeRecipe.steps && activeRecipe.steps.length > 0
+    ? activeRecipe.steps
+    : [
+        'Preparar y organizar los ingredientes en la mesa de trabajo.',
+        'Cocinar a fuego medio siguiendo la técnica recomendada.',
+        'Servir caliente y disfrutar de este riquísimo plato casero.'
+      ];
+
+  const totalTime = (activeRecipe.prepTime || 10) + (activeRecipe.cookTime || 15);
+
+  const isFav = isMealFavorited(activeRecipe.name, favorites);
 
   const toggleFav = () => {
     if (isFav) {
       sound.playClick(500);
-      const existing = favorites.find(f => f.name.toLowerCase().trim() === recipe.name.toLowerCase().trim());
+      const existing = favorites.find(f => f.name.toLowerCase().trim() === activeRecipe.name.toLowerCase().trim());
       if (existing) onDeleteFavorite(existing.id);
       triggerHaptic('light');
     } else {
       sound.playClick(1000);
-      const newFav = createFavoriteFromRecipe(recipe);
+      const newFav = createFavoriteFromRecipe(activeRecipe);
       onAddFavorite(newFav);
       triggerHaptic('success');
     }
@@ -46,10 +66,10 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
     sound.playSuccess();
     triggerHaptic('success');
     onAcceptMeal(
-      recipe.name,
+      activeRecipe.name,
       'cooking',
-      recipe.imageEmoji,
-      `Cocina (${recipe.difficulty}) • ${recipe.prepTime + recipe.cookTime} min`
+      activeRecipe.imageEmoji || '🍳',
+      `Cocina (${activeRecipe.difficulty || 'Fácil'}) • ${totalTime} min`
     );
     onClose();
   };
@@ -78,50 +98,52 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
           {/* Header */}
           <div className="flex items-start gap-3.5 pr-8">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-3xl shadow-inner shrink-0">
-              {recipe.imageEmoji}
+              {activeRecipe.imageEmoji || '🍳'}
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] uppercase font-semibold px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.04] dark:border-white/[0.06]">
-                  {recipe.category}
+                  {activeRecipe.category || 'Casero'}
                 </span>
                 <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-black/[0.04] dark:border-white/[0.06] flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {recipe.prepTime + recipe.cookTime} min
+                  {totalTime} min
                 </span>
                 <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-black/[0.04] dark:border-white/[0.06]">
-                  {recipe.difficulty}
+                  {activeRecipe.difficulty || 'Fácil'}
                 </span>
               </div>
               <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                {recipe.name}
+                {activeRecipe.name}
               </h3>
             </div>
           </div>
 
           {/* Ingredients list */}
-          <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
-            <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
-              <Utensils className="w-3.5 h-3.5" />
-              <span>Ingredientes Necesarios</span>
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {recipe.allIngredientsFormatted.map((ing, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-800 dark:text-zinc-200"
-                >
-                  <span>{getPantryItemEmoji(ing.id)}</span>
-                  <span className="truncate font-medium">{ing.name}</span>
-                  {ing.amount && (
-                    <span className="text-[10px] text-zinc-400 font-mono ml-auto shrink-0">
-                      {ing.amount}
-                    </span>
-                  )}
-                </div>
-              ))}
+          {ingredients.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+              <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
+                <Utensils className="w-3.5 h-3.5" />
+                <span>Ingredientes Necesarios</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {ingredients.map((ing: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-800 dark:text-zinc-200"
+                  >
+                    <span>{getPantryItemEmoji(ing.id || '')}</span>
+                    <span className="truncate font-medium">{ing.name}</span>
+                    {ing.amount && (
+                      <span className="text-[10px] text-zinc-400 font-mono ml-auto shrink-0">
+                        {ing.amount}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 3 Steps instructions */}
           <div className="space-y-2.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
@@ -129,7 +151,7 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
               Preparación en 3 Pasos Rápidos
             </h4>
             <div className="space-y-2">
-              {recipe.steps.map((step, idx) => (
+              {steps.map((step: string, idx: number) => (
                 <div
                   key={idx}
                   className="flex items-start gap-2.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed"
