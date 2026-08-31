@@ -8,16 +8,15 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-  Utensils,
-  Lightbulb,
   Search,
   X,
   Heart,
-  Star,
   Plus,
-  Dices
+  Dices,
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
-import { PantryCategory, MatchResult, MealHistoryItem, UserFavoriteMeal, PantryItem } from '../types';
+import { PantryCategory, MatchResult, MealHistoryItem, UserFavoriteMeal, PantryItem, MealCardItem } from '../types';
 import { 
   matchRecipesWithPantry, 
   savePantryToStorage, 
@@ -43,6 +42,7 @@ interface CookModeProps {
   favorites: UserFavoriteMeal[];
   onAddFavorite: (meal: UserFavoriteMeal) => void;
   onDeleteFavorite: (id: string) => void;
+  onOpenRecipeModal?: (item: MealCardItem) => void;
 }
 
 const CATEGORY_TABS: { id: PantryCategory | 'all'; label: string }[] = [
@@ -63,11 +63,13 @@ export const CookMode: React.FC<CookModeProps> = ({
   favorites,
   onAddFavorite,
   onDeleteFavorite,
+  onOpenRecipeModal,
 }) => {
   const [activeTab, setActiveTab] = useState<PantryCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewState, setViewState] = useState<'pantry' | 'results'>('pantry');
   const [selectedRecipeIndex, setSelectedRecipeIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(0);
   const [acceptedRecipeId, setAcceptedRecipeId] = useState<string | null>(null);
 
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -75,8 +77,12 @@ export const CookMode: React.FC<CookModeProps> = ({
   const [customCategory, setCustomCategory] = useState<PantryCategory>('veggies');
   const [allAvailableItems, setAllAvailableItems] = useState<PantryItem[]>([]);
 
-  const [isSpinningRoulette, setIsSpinningRoulette] = useState(false);
-  const rouletteIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Sorteo / Duel State (Identical to Home Raffle)
+  const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
+  const [isPreparingRaffle, setIsPreparingRaffle] = useState<boolean>(false);
+  const [isSpinningDuel, setIsSpinningDuel] = useState<boolean>(false);
+  const [duelWinner, setDuelWinner] = useState<MealCardItem | null>(null);
+  const duelTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setAllAvailableItems(getAllPantryItems());
@@ -180,40 +186,70 @@ export const CookMode: React.FC<CookModeProps> = ({
     }
   }, [viewState]);
 
-  const handleSpinReadyRoulette = () => {
-    if (readyToCookMatches.length === 0) return;
-    setIsSpinningRoulette(true);
+  const matchToMealCard = (m: MatchResult): MealCardItem => {
+    const r = m.recipe;
+    const totalTime = r.prepTime + r.cookTime;
+    return {
+      id: r.id,
+      name: r.name,
+      type: 'cooking',
+      categoryLabel: `Cocina (${r.difficulty})`,
+      timeEstimate: `${totalTime} min`,
+      tags: r.tags,
+      description: r.nutritionHighlight || `Receta casera (${m.matchPercentage}% disponible).`,
+      ingredientsSummary: r.allIngredientsFormatted.slice(0, 4).map(i => i.name),
+      imageEmoji: r.imageEmoji,
+      caloriesApprox: r.caloriesApprox,
+      vibe: r.chefTip ? `Tip del Chef: ${r.chefTip}` : 'Fácil de preparar en casa con tus ingredientes disponibles.',
+      recipe: r,
+    };
+  };
+
+  const startRaffle = (candidates: MealCardItem[]) => {
+    if (candidates.length === 0) return;
+    if (duelTimerRef.current) clearInterval(duelTimerRef.current);
+
+    setIsDuelActive(true);
+    setIsPreparingRaffle(true);
+    setDuelWinner(null);
+    sound.playClick(900);
     triggerHaptic('medium');
 
-    let counter = 0;
-    const totalSpins = 16;
-    const intervalTime = 80;
+    // 2-second preparation stage with sloth image (identical to Home)
+    setTimeout(() => {
+      setIsPreparingRaffle(false);
+      setIsSpinningDuel(true);
+      triggerHaptic('medium');
 
-    if (rouletteIntervalRef.current) clearInterval(rouletteIntervalRef.current);
+      let counter = 0;
+      const totalFlips = 18;
+      const intervalTime = 85;
 
-    rouletteIntervalRef.current = setInterval(() => {
-      counter++;
-      const randomIndex = Math.floor(Math.random() * readyToCookMatches.length);
-      const chosenMatch = readyToCookMatches[randomIndex];
-      const matchIndexInFull = matchResults.findIndex(m => m.recipe.id === chosenMatch.recipe.id);
-      
-      setSelectedRecipeIndex(matchIndexInFull !== -1 ? matchIndexInFull : 0);
-      sound.playTick(600 + (counter * 30));
-      triggerHaptic('light');
+      if (duelTimerRef.current) clearInterval(duelTimerRef.current);
 
-      if (counter >= totalSpins) {
-        if (rouletteIntervalRef.current) clearInterval(rouletteIntervalRef.current);
-        setIsSpinningRoulette(false);
-        sound.playSuccess();
-        triggerHaptic('success');
-        triggerVictoryConfetti();
-      }
-    }, intervalTime);
+      duelTimerRef.current = setInterval(() => {
+        counter++;
+        const pick = candidates[counter % candidates.length];
+        setDuelWinner(pick);
+        sound.playTick(600 + (counter * 20));
+        triggerHaptic('light');
+
+        if (counter >= totalFlips) {
+          if (duelTimerRef.current) clearInterval(duelTimerRef.current);
+          const finalWinner = candidates[Math.floor(Math.random() * candidates.length)];
+          setDuelWinner(finalWinner);
+          setIsSpinningDuel(false);
+          sound.playSuccess();
+          triggerHaptic('success');
+          triggerVictoryConfetti();
+        }
+      }, intervalTime);
+    }, 2000);
   };
 
   useEffect(() => {
     return () => {
-      if (rouletteIntervalRef.current) clearInterval(rouletteIntervalRef.current);
+      if (duelTimerRef.current) clearInterval(duelTimerRef.current);
     };
   }, []);
 
@@ -421,8 +457,8 @@ export const CookMode: React.FC<CookModeProps> = ({
             )}
           </AnimatePresence>
 
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {/* Category Tabs with Sliding Spring Pill */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none relative">
             {CATEGORY_TABS.map(tab => {
               const isSelected = activeTab === tab.id;
               const count = categorySelectedCounts[tab.id] || 0;
@@ -434,15 +470,22 @@ export const CookMode: React.FC<CookModeProps> = ({
                     sound.playClick(isSelected ? 600 : 750);
                     setActiveTab(tab.id);
                   }}
-                  className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 btn-press cursor-pointer border transition-all ${
+                  className={`relative px-3.5 py-1.5 rounded-full text-xs flex items-center gap-1.5 shrink-0 cursor-pointer border transition-colors ${
                     isSelected
-                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-bold shadow-xs'
+                      ? 'text-white dark:text-zinc-900 font-bold border-transparent'
                       : 'bg-white dark:bg-zinc-900 border-black/[0.08] dark:border-white/[0.08] text-zinc-600 dark:text-zinc-400 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
                 >
-                  <span>{tab.label}</span>
+                  {isSelected && (
+                    <motion.div
+                      layoutId="pantry-category-pill"
+                      transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                      className="absolute inset-0 bg-zinc-900 dark:bg-white rounded-full shadow-xs -z-0"
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                   {count > 0 && (
-                    <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                    <span className={`relative z-10 text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
                       isSelected 
                         ? 'bg-amber-500 text-zinc-950' 
                         : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
@@ -455,86 +498,116 @@ export const CookMode: React.FC<CookModeProps> = ({
             })}
           </div>
 
-          {/* Ingredients Grid */}
+          {/* Ingredients Grid with Elastic Tactile Tokens */}
           <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs">
-            <div className="flex flex-wrap gap-2">
-              {filteredPantryItems.map(item => {
-                const isSelected = pantry.includes(item.id);
-                return (
-                  <div key={item.id} className="relative group">
-                    <button
-                      id={`btn-pantry-${item.id}`}
-                      onClick={() => toggleIngredient(item.id)}
-                      className={`px-3.5 py-2 rounded-2xl text-xs flex items-center gap-2 btn-press cursor-pointer border transition-all ${
-                        isSelected
-                          ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold shadow-sm shadow-amber-500/20'
-                          : 'bg-zinc-50 dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium'
-                      }`}
+            <motion.div layout className="flex flex-wrap gap-2">
+              <AnimatePresence>
+                {filteredPantryItems.map(item => {
+                  const isSelected = pantry.includes(item.id);
+                  return (
+                    <motion.div 
+                      key={item.id} 
+                      layout
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.85 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                      className="relative group"
                     >
-                      <span className="text-sm">{item.emoji || '🥘'}</span>
-                      <span>{item.name}</span>
-                      {isSelected && (
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      )}
-                    </button>
-
-                    {!item.isCommon && (
-                      <button
-                        onClick={e => handleDeleteCustomItem(item.id, e)}
-                        title="Eliminar ingrediente"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-1 -right-1 w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 hover:text-red-500 flex items-center justify-center text-[10px] shadow-xs cursor-pointer"
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        id={`btn-pantry-${item.id}`}
+                        onClick={() => toggleIngredient(item.id)}
+                        className={`px-3.5 py-2 rounded-2xl text-xs flex items-center gap-2 cursor-pointer border transition-all ${
+                          isSelected
+                            ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold shadow-sm shadow-amber-500/20'
+                            : 'bg-zinc-50 dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium'
+                        }`}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                        <span className="text-sm">{item.emoji || '🥘'}</span>
+                        <span>{item.name}</span>
+                        {isSelected && (
+                          <motion.span
+                            initial={{ scale: 0, rotate: -45 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </motion.span>
+                        )}
+                      </motion.button>
+
+                      {!item.isCommon && (
+                        <button
+                          onClick={e => handleDeleteCustomItem(item.id, e)}
+                          title="Eliminar ingrediente"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-1 -right-1 w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 hover:text-red-500 flex items-center justify-center text-[10px] shadow-xs cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
           </div>
 
-          {/* Sticky Floating Bottom Bar with Match Results */}
-          {pantry.length > 0 && (
-            <div className="fixed bottom-3 left-4 right-4 max-w-xl mx-auto z-40 p-2.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex items-center justify-between gap-2">
-              <div className="pl-2">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50 block">
-                  {matchResults.length} {matchResults.length === 1 ? 'receta posible' : 'recetas posibles'}
-                </span>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                  {readyToCookMatches.length} listas al 100%
-                </span>
-              </div>
+          {/* Sticky Floating Dynamic Action Dock */}
+          <AnimatePresence>
+            {pantry.length > 0 && (
+              <motion.div 
+                initial={{ y: 50, opacity: 0, scale: 0.94 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 50, opacity: 0, scale: 0.94 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+                className="fixed bottom-3 left-4 right-4 max-w-xl mx-auto z-40 p-2.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex items-center justify-between gap-2"
+              >
+                <div className="pl-2">
+                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-1.5">
+                    <span>{matchResults.length} {matchResults.length === 1 ? 'receta posible' : 'recetas posibles'}</span>
+                  </span>
+                  <span className={`text-[10px] flex items-center gap-1 font-semibold ${
+                    readyToCookMatches.length > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'
+                  }`}>
+                    {readyToCookMatches.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                    <span>{readyToCookMatches.length} listas para cocinar ya (100%)</span>
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                {readyToCookMatches.length > 0 && (
-                  <button
-                    onClick={() => {
-                      handleGenerate();
-                      setTimeout(() => handleSpinReadyRoulette(), 250);
-                    }}
-                    className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer"
-                    title="Sortear entre recetas al 100%"
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {matchResults.length > 0 && (
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => {
+                        const candidates = matchResults.map(matchToMealCard);
+                        startRaffle(candidates);
+                      }}
+                      className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer border border-black/[0.04] dark:border-white/[0.06]"
+                      title="Sortear entre todas las recetas posibles"
+                    >
+                      <Dices className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Sortear</span>
+                    </motion.button>
+                  )}
+
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    id="btn-generate-recipe"
+                    onClick={handleGenerate}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer"
                   >
-                    <Dices className="w-3.5 h-3.5" />
-                    <span>Sortear</span>
-                  </button>
-                )}
-
-                <button
-                  id="btn-generate-recipe"
-                  onClick={handleGenerate}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer"
-                >
-                  <ChefHat className="w-4 h-4" />
-                  <span>Ver Recetas ({matchResults.length})</span>
-                </button>
-              </div>
-            </div>
-          )}
+                    <ChefHat className="w-4 h-4" />
+                    <span>Ver Recetas ({matchResults.length})</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
-      {/* RESULTS VIEW WITH CAROUSEL */}
+      {/* RESULTS VIEW WITH DIRECTIONAL SPRING CAROUSEL */}
       {viewState === 'results' && topMatch && (
         <div className="space-y-4">
           {/* Carousel Header & Counter */}
@@ -548,14 +621,31 @@ export const CookMode: React.FC<CookModeProps> = ({
               </span>
             </div>
 
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows & Sorteo */}
             <div className="flex items-center gap-1.5">
-              <button
+              {matchResults.length > 1 && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    const candidates = matchResults.map(matchToMealCard);
+                    startRaffle(candidates);
+                  }}
+                  className="px-2.5 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer border border-black/[0.04] dark:border-white/[0.06]"
+                  title="Sortear entre todas las recetas posibles"
+                >
+                  <Dices className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="hidden sm:inline">Sortear</span>
+                </motion.button>
+              )}
+
+              <motion.button
+                whileTap={{ scale: 0.9 }}
                 id="btn-prev-recipe"
                 onClick={() => {
                   if (selectedRecipeIndex > 0) {
                     sound.playClick(750);
                     triggerHaptic('light');
+                    setDirection(-1);
                     setSelectedRecipeIndex(prev => prev - 1);
                   }
                 }}
@@ -564,14 +654,16 @@ export const CookMode: React.FC<CookModeProps> = ({
                 title="Receta anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileTap={{ scale: 0.9 }}
                 id="btn-next-recipe"
                 onClick={() => {
                   if (selectedRecipeIndex < matchResults.length - 1) {
                     sound.playClick(850);
                     triggerHaptic('light');
+                    setDirection(1);
                     setSelectedRecipeIndex(prev => prev + 1);
                   }
                 }}
@@ -580,33 +672,60 @@ export const CookMode: React.FC<CookModeProps> = ({
                 title="Siguiente receta"
               >
                 <ChevronRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </div>
           </div>
 
-          {/* Main Recipe Card with Swipe */}
-          <div className="relative">
-            <AnimatePresence mode="wait">
+          {/* Main Recipe Card with Directional Spring Motion & Swipe */}
+          <div className="relative overflow-hidden">
+            <AnimatePresence mode="popLayout" custom={direction} initial={false}>
               <motion.div
                 key={topMatch.recipe.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                custom={direction}
+                variants={{
+                  enter: (dir: number) => ({
+                    x: dir > 0 ? 100 : dir < 0 ? -100 : 0,
+                    opacity: 0,
+                    scale: 0.96,
+                  }),
+                  center: {
+                    x: 0,
+                    opacity: 1,
+                    scale: 1,
+                    transition: {
+                      type: 'spring',
+                      stiffness: 350,
+                      damping: 28,
+                    },
+                  },
+                  exit: (dir: number) => ({
+                    x: dir > 0 ? -100 : dir < 0 ? 100 : 0,
+                    opacity: 0,
+                    scale: 0.96,
+                    transition: {
+                      duration: 0.16,
+                    },
+                  }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.6}
+                dragElastic={0.5}
                 onDragEnd={(_e, info) => {
-                  if (info.offset.x > 80 || info.velocity.x > 400) {
+                  if (info.offset.x > 70 || info.velocity.x > 350) {
                     if (selectedRecipeIndex > 0) {
                       sound.playClick(750);
                       triggerHaptic('light');
+                      setDirection(-1);
                       setSelectedRecipeIndex(prev => prev - 1);
                     }
-                  } else if (info.offset.x < -80 || info.velocity.x < -400) {
+                  } else if (info.offset.x < -70 || info.velocity.x < -350) {
                     if (selectedRecipeIndex < matchResults.length - 1) {
                       sound.playClick(850);
                       triggerHaptic('light');
+                      setDirection(1);
                       setSelectedRecipeIndex(prev => prev + 1);
                     }
                   }
@@ -703,7 +822,7 @@ export const CookMode: React.FC<CookModeProps> = ({
                         key={idx}
                         className="flex items-start gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-black/[0.04] dark:border-white/[0.06]"
                       >
-                        <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
                           {idx + 1}
                         </div>
                         <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
@@ -721,14 +840,15 @@ export const CookMode: React.FC<CookModeProps> = ({
                       Receta confirmada y guardada en tu historial
                     </div>
                   ) : (
-                    <button
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
                       id="btn-cook-accept-main"
                       onClick={() => handleAcceptRecipe(topMatch)}
                       className="w-full py-3.5 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 btn-press cursor-pointer"
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>Cocinaré esto hoy</span>
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </motion.div>
@@ -736,6 +856,175 @@ export const CookMode: React.FC<CookModeProps> = ({
           </div>
         </div>
       )}
+
+      {/* FINAL RAFFLE MODAL (IDENTICAL TO HOME WITH SLOTH PREPARATION) */}
+      <AnimatePresence>
+        {isDuelActive && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none touch-none overscroll-none"
+            style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
+              style={{ touchAction: 'none', overscrollBehavior: 'none' }}
+            >
+              {/* Subtle glowing ambient background effect */}
+              <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              {/* Close */}
+              <button
+                onClick={() => {
+                  sound.playClick(600);
+                  setIsDuelActive(false);
+                  setIsPreparingRaffle(false);
+                  if (duelTimerRef.current) clearInterval(duelTimerRef.current);
+                }}
+                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Header */}
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
+                  <span>Sorteo Despensa ({matchResults.length} {matchResults.length === 1 ? 'opción' : 'opciones'})</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
+                  ¡Sorteo de Despensa!
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {isPreparingRaffle 
+                    ? `Reuniendo tus ${matchResults.length} recetas posibles...` 
+                    : 'Sorteo aleatorio entre tus recetas posibles.'}
+                </p>
+              </div>
+
+              {/* 2-SECOND SKELETON / PREPARING STATE */}
+              {isPreparingRaffle ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="py-4 space-y-4 flex flex-col items-center justify-center"
+                >
+                  <div className="relative w-44 h-44 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/30 bg-zinc-100 dark:bg-zinc-800 animate-pulse">
+                    <img
+                      src="./sloth-thinking.jpg"
+                      alt="Preparando el sorteo..."
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1">
+                      <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center animate-spin">
+                        <Sparkles className="w-6 h-6 text-amber-400" />
+                      </div>
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Preparando sorteo...
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold tracking-wide animate-pulse">
+                    Reuniendo tus {matchResults.length} recetas posibles...
+                  </p>
+                </motion.div>
+              ) : duelWinner && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+                  className="space-y-5"
+                >
+                  {/* Decree Card */}
+                  <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3 relative overflow-hidden">
+                    <div className="text-5xl sm:text-6xl">
+                      {duelWinner.imageEmoji}
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
+                        {isSpinningDuel 
+                          ? 'Sorteando tu comida...' 
+                          : 'Salió sorteada:'}
+                      </span>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 leading-tight">
+                        {duelWinner.name}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full inline-block bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                        🍳 Cocinar
+                      </span>
+                      <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                        ⏱️ {duelWinner.timeEstimate}
+                      </span>
+                      <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                        {duelWinner.categoryLabel}
+                      </span>
+                      {duelWinner.caloriesApprox && (
+                        <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-black/[0.06] dark:border-white/[0.08]">
+                          🔥 {duelWinner.caloriesApprox}
+                        </span>
+                      )}
+                    </div>
+
+                    {duelWinner.vibe && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 italic pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                        "{duelWinner.vibe}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Contextual Action Buttons */}
+                  {!isSpinningDuel && (
+                    <div className="space-y-2.5 pt-1">
+                      {onOpenRecipeModal && (
+                        <button
+                          id="btn-duel-view-recipe"
+                          onClick={() => {
+                            sound.playClick(800);
+                            setIsDuelActive(false);
+                            onOpenRecipeModal(duelWinner);
+                          }}
+                          className="w-full py-3.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-100 font-medium text-xs flex items-center justify-center gap-2 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer"
+                        >
+                          <ChefHat className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Ver Receta en 3 Pasos</span>
+                        </button>
+                      )}
+
+                      <button
+                        id="btn-duel-accept"
+                        onClick={() => {
+                          sound.playSuccess();
+                          triggerHaptic('success');
+                          onAcceptMeal(
+                            duelWinner.name,
+                            'cooking',
+                            duelWinner.imageEmoji,
+                            `Sorteo Despensa • ${duelWinner.timeEstimate}`
+                          );
+                          setIsDuelActive(false);
+                        }}
+                        className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 shadow-md btn-press cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>¡Acepto el plato!</span>
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

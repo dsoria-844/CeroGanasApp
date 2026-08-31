@@ -131,12 +131,32 @@ export function restoreDeletedMeal(id: string): void {
   }
 }
 
-export function getAllCatalogMeals(): { delivery: DeliveryOption[]; recipes: Recipe[]; customCount: number } {
+export function getMergedRecipes(): Recipe[] {
   const deleted = loadDeletedMealIds();
   const custom = loadCustomMeals();
+  const customMap = new Map(custom.recipes.map(r => [r.id, r]));
   
-  const allDelivery = [...DELIVERY_DATASET, ...custom.delivery].filter(d => !deleted.includes(d.id));
-  const allRecipes = [...RECIPES_DATASET, ...custom.recipes].filter(r => !deleted.includes(r.id));
+  const defaultMapped = RECIPES_DATASET.map(r => customMap.get(r.id) || r);
+  const brandNewCustom = custom.recipes.filter(r => !RECIPES_DATASET.some(def => def.id === r.id));
+  
+  return [...defaultMapped, ...brandNewCustom].filter(r => !deleted.includes(r.id));
+}
+
+export function getMergedDelivery(): DeliveryOption[] {
+  const deleted = loadDeletedMealIds();
+  const custom = loadCustomMeals();
+  const customMap = new Map(custom.delivery.map(d => [d.id, d]));
+  
+  const defaultMapped = DELIVERY_DATASET.map(d => customMap.get(d.id) || d);
+  const brandNewCustom = custom.delivery.filter(d => !DELIVERY_DATASET.some(def => def.id === d.id));
+  
+  return [...defaultMapped, ...brandNewCustom].filter(d => !deleted.includes(d.id));
+}
+
+export function getAllCatalogMeals(): { delivery: DeliveryOption[]; recipes: Recipe[]; customCount: number } {
+  const custom = loadCustomMeals();
+  const allDelivery = getMergedDelivery();
+  const allRecipes = getMergedRecipes();
 
   return {
     delivery: allDelivery,
@@ -452,6 +472,14 @@ export function addMealToHistory(name: string, type: 'delivery' | 'cooking', emo
 export function deleteMealFromHistory(id: string): MealHistoryItem[] {
   const current = loadMealHistory();
   const updated = current.filter(item => item.id !== id);
+  saveMealHistoryToStorage(updated);
+  return updated;
+}
+
+export function restoreMealHistoryItem(itemToRestore: MealHistoryItem): MealHistoryItem[] {
+  const current = loadMealHistory();
+  const exists = current.some(i => i.id === itemToRestore.id);
+  const updated = exists ? current : [itemToRestore, ...current].sort((a, b) => b.timestamp - a.timestamp);
   saveMealHistoryToStorage(updated);
   return updated;
 }
@@ -1011,10 +1039,8 @@ export function getUnifiedCardDataset(
   history: MealHistoryItem[] = [],
   favorites: UserFavoriteMeal[] = []
 ): MealCardItem[] {
-  const deletedIds = loadDeletedMealIds();
-  const customMeals = loadCustomMeals();
-  const allDelivery = [...DELIVERY_DATASET, ...customMeals.delivery].filter(d => !deletedIds.includes(d.id));
-  const allRecipes = [...RECIPES_DATASET, ...customMeals.recipes].filter(r => !deletedIds.includes(r.id));
+  const allDelivery = getMergedDelivery();
+  const allRecipes = getMergedRecipes();
 
   const filteredDelivery = allDelivery.filter(d => {
     const hasExcluded = d.ingredients.some(ing => exclusions.includes(ing.toLowerCase().trim()));

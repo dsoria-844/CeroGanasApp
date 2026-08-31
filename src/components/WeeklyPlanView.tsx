@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar, 
   Dices, 
   RotateCcw, 
   Check, 
-  Clock
+  ChefHat,
+  ExternalLink
 } from 'lucide-react';
-import { WeeklyPlan, MealPlanSlot, MealHistoryItem, Recipe } from '../types';
+import { WeeklyPlan, MealPlanSlot, MealHistoryItem, Recipe, MealCardItem } from '../types';
 import { 
   loadWeeklyPlan, 
   saveWeeklyPlan, 
   generateFullWeeklyPlan, 
   rerollSingleSlot, 
   triggerHaptic, 
-  triggerVictoryConfetti 
+  triggerVictoryConfetti,
+  getAllCatalogMeals
 } from '../utils/storage';
 import { RECIPES_DATASET } from '../data/mealsData';
 import { sound } from '../utils/audio';
@@ -23,8 +25,32 @@ interface WeeklyPlanViewProps {
   exclusions: string[];
   history: MealHistoryItem[];
   onAcceptMeal: (mealName: string, type: 'delivery' | 'cooking', emoji: string, details?: string) => void;
-  onOpenRecipeModal: (recipe: Recipe) => void;
+  onOpenRecipeModal?: (recipe: Recipe | MealCardItem) => void;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.04,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 14, scale: 0.97 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 380,
+      damping: 26,
+    },
+  },
+};
 
 export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   exclusions,
@@ -102,10 +128,17 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
 
   const handleCardClick = (slot: MealPlanSlot) => {
     sound.playClick(800);
-    if (slot.type === 'cooking' && slot.recipeId) {
-      const recipe = RECIPES_DATASET.find(r => r.id === slot.recipeId);
-      if (recipe) {
-        onOpenRecipeModal(recipe);
+    triggerHaptic('light');
+    if (slot.type === 'cooking') {
+      const allCatalog = getAllCatalogMeals().filter(m => m.type === 'cooking');
+      const match = allCatalog.find(r => r.id === slot.recipeId || r.name.toLowerCase().trim() === slot.mealName.toLowerCase().trim());
+      if (match && match.recipe && onOpenRecipeModal) {
+        onOpenRecipeModal(match.recipe);
+      } else if (onOpenRecipeModal) {
+        const found = RECIPES_DATASET.find(r => r.id === slot.recipeId || r.name.toLowerCase().trim() === slot.mealName.toLowerCase().trim());
+        if (found) {
+          onOpenRecipeModal(found);
+        }
       }
     } else if (slot.type === 'delivery') {
       const query = encodeURIComponent(slot.mealName);
@@ -114,7 +147,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-5 pb-16">
+    <div className="w-full max-w-4xl mx-auto space-y-5 pb-16 select-none">
       {/* Top Banner & Generator CTA */}
       <div className="apple-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 sm:p-6">
         <div className="space-y-1">
@@ -125,27 +158,36 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
             </h2>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Almuerzos y cenas para toda la semana.
+            Almuerzos y cenas variados para toda la semana.
           </p>
         </div>
 
-        <button
+        <motion.button
+          whileTap={{ scale: 0.94 }}
           id="btn-generate-weekly-plan"
           onClick={handleGeneratePlan}
           disabled={isGenerating}
           className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-medium text-xs flex items-center justify-center gap-2 btn-press cursor-pointer shadow-xs shrink-0 disabled:opacity-50"
         >
-          <Dices className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+          <Dices className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin text-amber-400' : ''}`} />
           <span>{isGenerating ? 'Generando...' : 'Generar Menú Semanal'}</span>
-        </button>
+        </motion.button>
       </div>
 
-      {/* DAYS GRID */}
+      {/* DAYS GRID WITH STAGGERED MOTION */}
       {weeklyPlan && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5"
+        >
           {weeklyPlan.map((day, dayIdx) => (
-            <div
+            <motion.div
               key={day.dayId}
+              variants={cardVariants}
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
               className="apple-card p-4 space-y-3 flex flex-col justify-between"
             >
               {/* Day Header */}
@@ -153,7 +195,7 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                 <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
                   {day.dayName}
                 </span>
-                <span className="text-[10px] text-zinc-400 font-medium">
+                <span className="text-[10px] text-zinc-400 font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800">
                   Día {dayIdx + 1}
                 </span>
               </div>
@@ -164,49 +206,74 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                     Almuerzo
                   </span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.85, rotate: -45 }}
                     onClick={() => handleRerollSlot(dayIdx, 'lunch')}
-                    className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors btn-press cursor-pointer"
+                    className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                     title="Cambiar este almuerzo"
                   >
                     <RotateCcw className="w-3 h-3" />
-                  </button>
+                  </motion.button>
                 </div>
 
-                <div 
-                  onClick={() => handleCardClick(day.lunch)}
-                  className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-lg shadow-xs shrink-0">
-                    {day.lunch.emoji}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                      {day.lunch.mealName}
-                    </h4>
-                    <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium">
-                      <span>{day.lunch.timeEstimate}</span>
-                      <span>•</span>
-                      <span className="truncate">{day.lunch.category}</span>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.div 
+                    key={day.lunch.id}
+                    initial={{ opacity: 0, scale: 0.92, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                    onClick={() => handleCardClick(day.lunch)}
+                    className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
+                  >
+                    <motion.div 
+                      whileHover={{ scale: 1.06 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-lg shadow-xs shrink-0"
+                    >
+                      {day.lunch.emoji}
+                    </motion.div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className={`text-xs font-semibold truncate transition-colors ${
+                        day.lunch.isEaten ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-900 dark:text-zinc-100'
+                      }`}>
+                        {day.lunch.mealName}
+                      </h4>
+                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium">
+                        <span>{day.lunch.timeEstimate}</span>
+                        <span>•</span>
+                        <span className="truncate">{day.lunch.category}</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                </AnimatePresence>
 
                 <div className="flex items-center justify-between pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
-                  <span className="text-[10px] text-zinc-400">
-                    {day.lunch.type === 'cooking' ? 'Casero' : 'Delivery'}
+                  <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                    {day.lunch.type === 'cooking' ? (
+                      <>
+                        <ChefHat className="w-2.5 h-2.5 text-amber-500" />
+                        <span>Casero</span>
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-2.5 h-2.5 text-zinc-400" />
+                        <span>Delivery</span>
+                      </>
+                    )}
                   </span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
                     onClick={() => handleMarkEaten(day.lunch, day.dayName, 'Almuerzo')}
-                    className={`px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 btn-press cursor-pointer transition-colors ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] flex items-center gap-1 cursor-pointer transition-colors ${
                       day.lunch.isEaten
-                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold'
-                        : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-xs'
+                        : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-300 dark:hover:bg-zinc-700'
                     }`}
                   >
-                    <Check className="w-2.5 h-2.5" />
+                    <Check className={`w-2.5 h-2.5 stroke-[3] ${day.lunch.isEaten ? 'text-amber-400 dark:text-amber-500' : ''}`} />
                     <span>{day.lunch.isEaten ? 'Listo' : 'Comí'}</span>
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 
@@ -216,54 +283,79 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                     Cena
                   </span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.85, rotate: -45 }}
                     onClick={() => handleRerollSlot(dayIdx, 'dinner')}
-                    className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors btn-press cursor-pointer"
+                    className="p-1 rounded-md text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                     title="Cambiar esta cena"
                   >
                     <RotateCcw className="w-3 h-3" />
-                  </button>
+                  </motion.button>
                 </div>
 
-                <div 
-                  onClick={() => handleCardClick(day.dinner)}
-                  className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-lg shadow-xs shrink-0">
-                    {day.dinner.emoji}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                      {day.dinner.mealName}
-                    </h4>
-                    <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium">
-                      <span>{day.dinner.timeEstimate}</span>
-                      <span>•</span>
-                      <span className="truncate">{day.dinner.category}</span>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.div 
+                    key={day.dinner.id}
+                    initial={{ opacity: 0, scale: 0.92, y: 6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.92, y: -6 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                    onClick={() => handleCardClick(day.dinner)}
+                    className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
+                  >
+                    <motion.div 
+                      whileHover={{ scale: 1.06 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-lg shadow-xs shrink-0"
+                    >
+                      {day.dinner.emoji}
+                    </motion.div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className={`text-xs font-semibold truncate transition-colors ${
+                        day.dinner.isEaten ? 'text-zinc-400 dark:text-zinc-500 line-through' : 'text-zinc-900 dark:text-zinc-100'
+                      }`}>
+                        {day.dinner.mealName}
+                      </h4>
+                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-medium">
+                        <span>{day.dinner.timeEstimate}</span>
+                        <span>•</span>
+                        <span className="truncate">{day.dinner.category}</span>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                </AnimatePresence>
 
                 <div className="flex items-center justify-between pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
-                  <span className="text-[10px] text-zinc-400">
-                    {day.dinner.type === 'cooking' ? 'Casero' : 'Delivery'}
+                  <span className="text-[10px] text-zinc-400 flex items-center gap-1">
+                    {day.dinner.type === 'cooking' ? (
+                      <>
+                        <ChefHat className="w-2.5 h-2.5 text-amber-500" />
+                        <span>Casero</span>
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-2.5 h-2.5 text-zinc-400" />
+                        <span>Delivery</span>
+                      </>
+                    )}
                   </span>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
                     onClick={() => handleMarkEaten(day.dinner, day.dayName, 'Cena')}
-                    className={`px-2 py-0.5 rounded-full text-[10px] flex items-center gap-1 btn-press cursor-pointer transition-colors ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] flex items-center gap-1 cursor-pointer transition-colors ${
                       day.dinner.isEaten
-                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-semibold'
-                        : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
+                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold shadow-xs'
+                        : 'bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-medium hover:bg-zinc-300 dark:hover:bg-zinc-700'
                     }`}
                   >
-                    <Check className="w-2.5 h-2.5" />
+                    <Check className={`w-2.5 h-2.5 stroke-[3] ${day.dinner.isEaten ? 'text-amber-400 dark:text-amber-500' : ''}`} />
                     <span>{day.dinner.isEaten ? 'Listo' : 'Comí'}</span>
-                  </button>
+                  </motion.button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

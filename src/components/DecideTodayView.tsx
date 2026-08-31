@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'motion/react';
 import { 
   Heart, 
   X, 
@@ -105,11 +105,16 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   // Deck & Navigation State
   const [cardDeck, setCardDeck] = useState<MealCardItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(0);
   const [likedCards, setLikedCards] = useState<MealCardItem[]>([]);
   const [rejectedCards, setRejectedCards] = useState<MealCardItem[]>([]);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [duelThreshold, setDuelThreshold] = useState<number>(5);
   const [isDuelFeatureEnabled, setIsDuelFeatureEnabled] = useState<boolean>(false);
+
+  // Motion drag gesture values (Emil Kowalski physics)
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-250, 250], [-8, 8]);
 
   // Sorteo / Duel State
   const [isDuelActive, setIsDuelActive] = useState<boolean>(false);
@@ -150,6 +155,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
     const batch20 = shuffled.slice(0, 20);
     setCardDeck(batch20);
     setCurrentIndex(0);
+    setDirection(0);
     setIsFlipped(false);
     if (resetLikes) {
       setLikedCards([]);
@@ -162,8 +168,17 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   }, [selectedModality, selectedCategory, exclusions, history, favorites.length]);
 
   const currentCard = currentIndex < cardDeck.length ? cardDeck[currentIndex] : null;
+  const nextCard = currentIndex + 1 < cardDeck.length ? cardDeck[currentIndex + 1] : null;
+  const isDraggingRef = useRef(false);
+
+  // Reset x motion value on card changes
+  useEffect(() => {
+    x.set(0);
+    isDraggingRef.current = false;
+  }, [currentIndex]);
 
   const handleToggleFlip = () => {
+    if (isDraggingRef.current) return;
     sound.playClick(850);
     triggerHaptic('light');
     setIsFlipped(prev => !prev);
@@ -171,15 +186,19 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
   const handlePrev = () => {
     if (currentIndex > 0) {
+      x.set(0);
       sound.playClick(650);
       triggerHaptic('light');
+      setDirection(-1);
       setIsFlipped(false);
       setCurrentIndex(prev => prev - 1);
     }
   };
 
   const handleNext = () => {
+    x.set(0);
     setIsFlipped(false);
+    setDirection(1);
     if (currentIndex + 1 < cardDeck.length) {
       sound.playClick(750);
       triggerHaptic('light');
@@ -194,8 +213,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
   const handleReject = () => {
     if (!currentCard) return;
+    x.set(0);
     sound.playTick(450);
     triggerHaptic('light');
+    setDirection(1);
     
     // Remove from liked if it was liked
     setLikedCards(prev => prev.filter(c => c.id !== currentCard.id));
@@ -211,8 +232,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
   const handleLike = () => {
     if (!currentCard) return;
+    x.set(0);
     sound.playClick(950);
     triggerHaptic('success');
+    setDirection(1);
 
     // Remove from rejected if it was rejected
     setRejectedCards(prev => prev.filter(c => c.id !== currentCard.id));
@@ -240,6 +263,63 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       handleNext();
     }
   };
+
+  const handleDragStart = () => {
+    isDraggingRef.current = true;
+  };
+
+  // Fluid swipe release gesture handler for pure carousel navigation (Emil Kowalski velocity handoff)
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    const swipeThreshold = 70;
+    const velocityThreshold = 300;
+
+    if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
+      // Swipe left -> Next card
+      x.set(0);
+      handleNext();
+    } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+      // Swipe right -> Previous card
+      x.set(0);
+      handlePrev();
+    } else {
+      x.set(0);
+    }
+
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 120);
+  };
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((document.activeElement?.tagName || ''))) return;
+      if (isDuelActive || isRaffleRequirementOpen || isModalityOpen || isCategoryOpen) return;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === ' ' || e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        handleToggleFlip();
+      } else if (e.key === 'l' || e.key === 'L' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleLike();
+      } else if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleReject();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleDirectSelect();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, cardDeck, isFlipped, isDuelActive, isRaffleRequirementOpen, isModalityOpen, isCategoryOpen, currentCard]);
 
   const startRaffle = (candidates: MealCardItem[]) => {
     if (candidates.length === 0) return;
@@ -361,14 +441,14 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
   const currentCategoryLabel = CATEGORIES.find(c => c.id === selectedCategory)?.label || 'Todas las categorías';
 
   return (
-    <div className="w-full max-w-md mx-auto space-y-2.5 sm:space-y-3 pb-1 select-none overscroll-contain">
+    <div className="w-full max-w-md mx-auto h-full flex flex-col min-h-0 py-1 gap-2 sm:gap-2.5 select-none overscroll-none touch-none">
       {/* TOP BAR: Title & Tengo Hambre */}
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex items-center justify-between gap-3 shrink-0">
         <div>
-          <h2 className="text-xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-1.5">
+          <h2 className="text-lg sm:text-xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-1.5">
             <span>¿Qué comemos hoy?</span>
           </h2>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
+          <p className="text-[10.5px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
             {isDuelFeatureEnabled 
               ? '20 opciones al azar · Elegí las que te gusten para el sorteo' 
               : '20 opciones al azar · Descartá, marcá las que te gusten o elegí directo'}
@@ -380,7 +460,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
             sound.playClick(1000);
             onOpenBlindMode();
           }}
-          className="px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer shrink-0"
+          className="px-3 sm:px-3.5 py-1.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer shrink-0"
         >
           <Zap className="w-3.5 h-3.5 fill-current" />
           <span>¡Tengo Hambre!</span>
@@ -388,7 +468,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       </div>
 
       {/* DUAL DROPDOWNS: Modalidad & Categoría */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 shrink-0">
         {/* Dropdown 1: Modalidades */}
         <div ref={modalityDropdownRef} className="relative">
           <button
@@ -518,10 +598,10 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
       </div>
 
       {/* PROGRESS TRACKER & 20-CARD INDICATORS */}
-      <div className="apple-card p-2.5 sm:p-3 space-y-2">
+      <div className="apple-card p-2 sm:p-2.5 space-y-1.5 shrink-0">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 sm:gap-2 truncate">
-            <span className="px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+            <span className="px-2.5 py-0.5 sm:py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200">
               Plato {cardDeck.length > 0 ? currentIndex + 1 : 0}/{cardDeck.length}
             </span>
             {likedCards.length > 0 && (
@@ -566,7 +646,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                     setIsFlipped(false);
                     setCurrentIndex(idx);
                   }}
-                  className={`h-2 flex-1 rounded-full transition-all cursor-pointer ${
+                  className={`h-1.5 sm:h-2 flex-1 rounded-full transition-all cursor-pointer ${
                     isCurrent
                       ? 'ring-2 ring-zinc-900 dark:ring-white scale-y-125 z-10'
                       : 'opacity-80 hover:opacity-100'
@@ -585,42 +665,103 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
         )}
       </div>
 
-      {/* CENTRAL DISH CARD WITH LATERAL ARROWS & FLOATING ACTION BUTTONS */}
-      <div className="relative w-full h-[450px] sm:h-[475px] min-h-[420px] max-h-[490px] flex items-center justify-center overflow-hidden rounded-3xl">
-        {/* Previous Arrow Button */}
-        <button
-          onClick={handlePrev}
-          disabled={currentIndex === 0}
-          className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 dark:bg-zinc-900/95 border border-black/[0.1] dark:border-white/[0.15] shadow-xl backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-100 hover:scale-110 active:scale-95 disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed btn-press cursor-pointer transition-all"
-          title="Plato anterior"
-        >
-          <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
-        </button>
-
-        {/* Next Arrow Button */}
-        <button
-          onClick={handleNext}
-          className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/95 dark:bg-zinc-900/95 border border-black/[0.1] dark:border-white/[0.15] shadow-xl backdrop-blur-md flex items-center justify-center text-zinc-800 dark:text-zinc-100 hover:scale-110 active:scale-95 btn-press cursor-pointer transition-all"
-          title="Siguiente plato"
-        >
-          <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
-        </button>
-
-        {/* The Card with 3D Flip */}
-        {currentCard ? (
+      {/* CENTRAL DISH CARD WITH STACKED DECK DEPTH, DRAG GESTURES & FULL-HEIGHT LATERAL RAILS */}
+      <div className="relative w-full flex-1 min-h-[300px] max-h-[580px] flex items-center justify-center overflow-hidden rounded-3xl my-0.5">
+        {/* Next Card Stack Preview (Physical Deck Layering) */}
+        {nextCard && !isFlipped && (
           <div 
-            onClick={handleToggleFlip}
-            className="w-full h-full cursor-pointer [perspective:1000px]"
+            className="absolute inset-x-3.5 sm:inset-x-4 top-2.5 bottom-1 rounded-3xl bg-zinc-100/90 dark:bg-zinc-800/60 border border-black/[0.04] dark:border-white/[0.06] shadow-xs pointer-events-none -z-10 transform scale-[0.96] translate-y-2 opacity-50 flex items-center justify-center overflow-hidden transition-all duration-300"
           >
-            <motion.div
+            <div className="flex flex-col items-center justify-center opacity-25 scale-90">
+              <span className="text-5xl">{nextCard.imageEmoji}</span>
+              <span className="text-xs font-bold mt-1 text-zinc-800 dark:text-zinc-200">{nextCard.name}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Full-Height Lateral Tap Strip: Previous (Left Border from Top to Bottom) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handlePrev();
+          }}
+          disabled={currentIndex === 0}
+          className="absolute left-0 top-0 bottom-0 z-30 w-14 sm:w-16 flex items-center justify-start pl-2 sm:pl-3 bg-gradient-to-r from-black/[0.03] dark:from-white/[0.03] to-transparent hover:from-black/[0.07] dark:hover:from-white/[0.07] active:from-black/[0.12] disabled:opacity-0 disabled:pointer-events-none transition-all cursor-pointer group select-none rounded-l-3xl"
+          title="Plato anterior (Flecha Izquierda)"
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-zinc-600 dark:text-zinc-300 group-hover:scale-110 group-hover:-translate-x-0.5 group-hover:text-zinc-950 dark:group-hover:text-white group-active:scale-95 transition-all opacity-35 group-hover:opacity-100 sm:opacity-55">
+            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+          </div>
+        </button>
+
+        {/* Full-Height Lateral Tap Strip: Next (Right Border from Top to Bottom) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNext();
+          }}
+          className="absolute right-0 top-0 bottom-0 z-30 w-14 sm:w-16 flex items-center justify-end pr-2 sm:pr-3 bg-gradient-to-l from-black/[0.03] dark:from-white/[0.03] to-transparent hover:from-black/[0.07] dark:hover:from-white/[0.07] active:from-black/[0.12] transition-all cursor-pointer group select-none rounded-r-3xl"
+          title="Siguiente plato (Flecha Derecha)"
+        >
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-zinc-600 dark:text-zinc-300 group-hover:scale-110 group-hover:translate-x-0.5 group-hover:text-zinc-950 dark:group-hover:text-white group-active:scale-95 transition-all opacity-35 group-hover:opacity-100 sm:opacity-55">
+            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+          </div>
+        </button>
+
+        {/* The Card with Spring Motion, Drag Gestures & 3D Flip */}
+        <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+          {currentCard ? (
+            <motion.div 
               key={currentCard.id}
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-              className="relative w-full h-full [transform-style:preserve-3d] select-none"
+              custom={direction}
+              variants={{
+                enter: (dir: number) => ({
+                  x: dir > 0 ? 120 : dir < 0 ? -120 : 0,
+                  opacity: 0,
+                  scale: 0.94,
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1,
+                  scale: 1,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 340,
+                    damping: 28,
+                    mass: 0.8,
+                  },
+                },
+                exit: (dir: number) => ({
+                  x: dir > 0 ? -120 : dir < 0 ? 120 : 0,
+                  opacity: 0,
+                  scale: 0.94,
+                  transition: {
+                    duration: 0.18,
+                    ease: [0.23, 1, 0.32, 1],
+                  },
+                }),
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="w-full h-full [perspective:1000px] select-none"
             >
+              <motion.div
+                drag={isFlipped ? false : 'x'}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.6}
+                dragSnapToOrigin={true}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                style={{ x, rotate }}
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+                onClick={handleToggleFlip}
+                className="relative w-full h-full [transform-style:preserve-3d] cursor-grab active:cursor-grabbing touch-pan-y"
+              >
               {/* FRONT FACE (PORTADA) */}
               <div 
-                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-24 shadow-xl flex flex-col justify-between overflow-hidden transition-all duration-200 ${
+                className={`absolute inset-0 w-full h-full rounded-3xl p-3.5 sm:p-5 px-5 sm:px-7 pb-18 sm:pb-22 shadow-[0_2px_4px_rgba(0,0,0,0.02),0_8px_16px_rgba(0,0,0,0.04),0_20px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.2),0_8px_16px_rgba(0,0,0,0.35),0_24px_48px_rgba(0,0,0,0.55)] ring-1 ring-black/[0.06] dark:ring-white/[0.08] flex flex-col justify-between overflow-hidden transition-all duration-200 ${
                   currentCardStatus === 'liked'
                     ? 'bg-white dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
                     : currentCardStatus === 'rejected'
@@ -636,6 +777,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                   pointerEvents: isFlipped ? 'none' : 'auto',
                 }}
               >
+
                 {/* Subtle Ambient status wash background */}
                 {currentCardStatus === 'liked' && (
                   <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
@@ -647,37 +789,37 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 {/* Top Badges & Status & Favorite Button */}
                 <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 ${
+                    <span className={`text-[10px] sm:text-[11px] font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 ${
                       currentCard.type === 'cooking'
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
                         : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
                     }`}>
-                      {currentCard.type === 'cooking' ? <ChefHat className="w-3.5 h-3.5" /> : <Bike className="w-3.5 h-3.5" />}
+                      {currentCard.type === 'cooking' ? <ChefHat className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Bike className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
                       <span>{currentCard.type === 'cooking' ? 'Cocinar' : 'Delivery'}</span>
                     </span>
 
                     {/* Status Pill */}
                     {currentCardStatus === 'liked' && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 animate-in fade-in">
+                      <span className="text-[9.5px] sm:text-[10px] font-extrabold px-2 sm:px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1 animate-in fade-in">
                         <Check className="w-3 h-3 stroke-[3] text-emerald-600 dark:text-emerald-400" />
                         <span>Elegido</span>
                       </span>
                     )}
                     {currentCardStatus === 'rejected' && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40 flex items-center gap-1 animate-in fade-in">
+                      <span className="text-[9.5px] sm:text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider bg-rose-500/20 text-rose-800 dark:text-rose-200 border border-rose-500/40 flex items-center gap-1 animate-in fade-in">
                         <X className="w-3 h-3 stroke-[3] text-rose-600 dark:text-rose-400" />
                         <span>Descartado</span>
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleFlip();
                       }}
-                      className="p-2 rounded-full border border-black/[0.06] dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all btn-press cursor-pointer"
+                      className="p-1.5 sm:p-2 rounded-full border border-black/[0.06] dark:border-white/[0.06] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all btn-press cursor-pointer"
                       title="Ver información y receta"
                     >
                       <Info className="w-3.5 h-3.5" />
@@ -688,53 +830,53 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                         e.stopPropagation();
                         handleToggleFavorite(currentCard);
                       }}
-                      className={`p-2 rounded-full border transition-all btn-press cursor-pointer ${
+                      className={`p-1.5 sm:p-2 rounded-full border transition-all btn-press cursor-pointer ${
                         isFavorited
                           ? 'bg-amber-500 text-zinc-950 border-amber-500 shadow-sm'
                           : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-black/[0.06] dark:border-white/[0.06]'
                       }`}
                       title={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                     >
-                      <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                      <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>
 
                 {/* Dish Center Info */}
-                <div className="flex flex-col items-center justify-center text-center my-auto py-2 relative z-10">
-                  <div className="text-7xl mb-3 filter drop-shadow-md select-none transform hover:scale-105 transition-transform">
+                <div className="flex flex-col items-center justify-center text-center my-auto py-2 sm:py-3 relative z-10">
+                  <div className="text-6xl sm:text-7xl md:text-8xl mb-2 sm:mb-3 filter drop-shadow-md select-none transform hover:scale-105 transition-transform">
                     {currentCard.imageEmoji}
                   </div>
 
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight mb-2">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight mb-1.5 sm:mb-2 line-clamp-2">
                     {currentCard.name}
                   </h3>
 
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[280px] line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-[320px] line-clamp-2 sm:line-clamp-3 leading-relaxed">
                     {currentCard.description}
                   </p>
 
-                  <div className="flex items-center justify-center gap-2 mt-3.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-2.5 sm:mt-4 flex-wrap">
+                    <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
                       <Clock className="w-3 h-3 text-zinc-400" />
                       <span>{currentCard.timeEstimate}</span>
                     </span>
 
                     {currentCard.caloriesApprox && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
                         <Flame className="w-3 h-3 text-orange-500" />
                         <span>~{currentCard.caloriesApprox} kcal</span>
                       </span>
                     )}
 
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
+                    <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-full border border-black/[0.04] dark:border-white/[0.04]">
                       <span>{currentCard.vibe}</span>
                     </span>
                   </div>
                 </div>
 
                 {/* Bottom hint */}
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 font-medium relative z-10">
+                <div className="flex items-center justify-center gap-1.5 text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 font-medium relative z-10">
                   <RotateCw className="w-3 h-3" />
                   <span>Toca para ver receta e ingredientes</span>
                 </div>
@@ -742,11 +884,11 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
 
               {/* BACK FACE (RECETA / DETALLES) */}
               <div 
-                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 pb-24 shadow-xl flex flex-col justify-between overflow-y-auto transition-all duration-200 ${
+                className={`absolute inset-0 w-full h-full rounded-3xl p-5 sm:p-6 px-7 sm:px-8 pb-24 shadow-[0_2px_4px_rgba(0,0,0,0.02),0_8px_16px_rgba(0,0,0,0.04),0_20px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.2),0_8px_16px_rgba(0,0,0,0.35),0_24px_48px_rgba(0,0,0,0.55)] ring-1 ring-black/[0.06] dark:ring-white/[0.08] flex flex-col justify-between overflow-y-auto transition-all duration-200 ${
                   currentCardStatus === 'liked'
-                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-emerald-500/80 shadow-emerald-500/10'
+                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-emerald-500/80'
                     : currentCardStatus === 'rejected'
-                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-rose-500/70 shadow-rose-500/10'
+                    ? 'bg-zinc-50 dark:bg-zinc-900 border-2 border-rose-500/70'
                     : 'bg-zinc-50 dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1]'
                 }`}
                 style={{ 
@@ -783,6 +925,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                     </button>
                   </div>
 
+                  {/* Cooking Recipe Details */}
                   {currentCard.type === 'cooking' && currentCard.recipe ? (
                     <div className="space-y-3 text-left">
                       <div>
@@ -848,67 +991,95 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 </div>
               </div>
             </motion.div>
-          </div>
-        ) : (
-          <div className="apple-card p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
-              No hay más platos en esta categoría
-            </p>
-            <button
-              onClick={() => loadRandomBatch(true)}
-              className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold"
-            >
-              Cargar 20 platos nuevos
-            </button>
-          </div>
-        )}
+          </motion.div>
+          ) : (
+            <div className="apple-card p-8 text-center space-y-3">
+              <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
+                No hay más platos en esta categoría
+              </p>
+              <button
+                onClick={() => loadRandomBatch(true)}
+                className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold btn-press cursor-pointer"
+              >
+                Cargar 20 platos nuevos
+              </button>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* FLOATING ACTION BUTTONS OVER THE CARD (3 CLEAN & SPACIOUS BUTTONS) */}
         {currentCard && (
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-3 left-3.5 right-3.5 z-30 flex items-center gap-2 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl"
+            className="absolute bottom-2 sm:bottom-2.5 left-2.5 sm:left-3 right-2.5 sm:right-3 z-30 flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
           >
-            {/* Reject Button */}
-            <button
+            {/* Reject Button (Rojo intuitivo) */}
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               onClick={handleReject}
-              className={`flex-1 h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer transition-all ${
+              className={`flex-1 h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 font-bold text-[11px] sm:text-xs btn-press cursor-pointer transition-all border ${
                 isCurrentlyRejected
-                  ? 'bg-rose-600 text-white dark:bg-rose-600 dark:text-white shadow-sm shadow-rose-500/20 ring-2 ring-rose-500/50'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40'
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-500/30 ring-2 ring-rose-500/40'
+                  : 'bg-rose-50/90 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/80 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-900/60'
               }`}
-              title="Descartar este plato"
+              title="Descartar este plato (Tecla D)"
             >
-              <X className="w-4 h-4 stroke-[2.5]" />
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
               <span>{isCurrentlyRejected ? 'Descartado' : 'Descartar'}</span>
-            </button>
+            </motion.button>
 
-            {/* Like Button */}
-            <button
+            {/* Like Button (Verde intuitivo) */}
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               onClick={handleLike}
-              className={`flex-[1.1] h-11 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs btn-press cursor-pointer shadow-sm transition-all ${
+              className={`flex-[1.1] h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 font-bold text-[11px] sm:text-xs btn-press cursor-pointer transition-all border ${
                 isCurrentlyLiked
-                  ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950 font-bold shadow-emerald-500/20 ring-2 ring-emerald-500/50'
-                  : 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/30 ring-2 ring-emerald-500/40'
+                  : 'bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/80 dark:border-emerald-900/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
               }`}
-              title="Marcar como «Me interesa»"
+              title="Marcar como «Me interesa» (Tecla L)"
             >
-              <Heart className={`w-4 h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
+              <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5] ${isCurrentlyLiked ? 'fill-current' : ''}`} />
               <span>{isCurrentlyLiked ? 'Te interesa' : 'Me interesa'}</span>
-            </button>
+            </motion.button>
 
             {/* Direct Select Button */}
-            <button
+            <motion.button
+              whileTap={{ scale: 0.96 }}
               id="btn-direct-choose"
               onClick={handleDirectSelect}
-              className="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
-              title="Elegir este plato ahora"
+              className="flex-1 h-10 sm:h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 shadow-md shadow-amber-500/20 btn-press cursor-pointer transition-colors"
+              title="Elegir este plato ahora (Tecla Enter)"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
               <span>Elegir</span>
-            </button>
+            </motion.button>
           </div>
         )}
+      </div>
+
+      {/* DESKTOP KEYBOARD SHORTCUTS HINT BAR */}
+      <div className="hidden sm:flex items-center justify-center gap-3 pt-0.5 text-[10px] text-zinc-400 font-medium select-none shrink-0">
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono text-[9px] border border-black/[0.06] dark:border-white/[0.08]">←</kbd>
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono text-[9px] border border-black/[0.06] dark:border-white/[0.08]">→</kbd>
+          <span>Navegar</span>
+        </span>
+        <span>•</span>
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono text-[9px] border border-black/[0.06] dark:border-white/[0.08]">Espacio</kbd>
+          <span>Receta</span>
+        </span>
+        <span>•</span>
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono text-[9px] border border-black/[0.06] dark:border-white/[0.08]">L</kbd>
+          <span>Me interesa</span>
+        </span>
+        <span>•</span>
+        <span className="flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono text-[9px] border border-black/[0.06] dark:border-white/[0.08]">D</kbd>
+          <span>Descartar</span>
+        </span>
       </div>
 
       {/* FINAL RAFFLE MODAL (WITH 2-SECOND PREPARATION) */}

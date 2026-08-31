@@ -104,10 +104,10 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
         style={{ touchAction: 'none', overscrollBehavior: 'none' }}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 15 }}
-          transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+          exit={{ opacity: 0, scale: 0.92, y: 20 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 320 }}
           className="relative w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-amber-500/30 p-5 sm:p-7 shadow-2xl text-center space-y-4 overflow-hidden touch-none select-none"
           style={{ touchAction: 'none', overscrollBehavior: 'none' }}
         >
@@ -116,15 +116,16 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
           <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
           {/* Close button */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.85 }}
             onClick={() => {
               sound.playClick(600);
               onClose();
             }}
-            className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer z-10"
+            className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors cursor-pointer z-10 shadow-2xs"
           >
             <X className="w-4 h-4" />
-          </button>
+          </motion.button>
 
           {/* Header */}
           <div className="flex flex-col items-center justify-center gap-1.5">
@@ -172,17 +173,20 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
                       </span>
                     </motion.div>
                   ) : (
-                    <motion.div 
-                      key={counter}
-                      initial={{ scale: 0.4, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                      className="flex flex-col items-center"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-amber-500/50">
-                        {counter}
-                      </div>
-                    </motion.div>
+                    <AnimatePresence mode="popLayout">
+                      <motion.div 
+                        key={counter}
+                        initial={{ scale: 0.3, opacity: 0, rotate: -10 }}
+                        animate={{ scale: [0.3, 1.2, 1], opacity: 1, rotate: 0 }}
+                        exit={{ scale: 0.3, opacity: 0, rotate: 10 }}
+                        transition={{ type: 'spring', stiffness: 450, damping: 18 }}
+                        className="flex flex-col items-center"
+                      >
+                        <div className="w-16 h-16 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-amber-500/60 border-2 border-amber-300">
+                          {counter}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
                   )}
                 </div>
               </div>
@@ -197,16 +201,26 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
           {/* STAGE 3: REVEALED STAGE */}
           {stage === 'revealed' && chosenMeal && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+              initial={{ opacity: 0, scale: 0.88, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 320 }}
               className="space-y-5"
             >
               {/* Decree Card */}
-              <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3 relative overflow-hidden">
-                <div className="text-5xl sm:text-6xl">
+              <motion.div 
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.08] space-y-3 relative overflow-hidden shadow-sm"
+              >
+                <motion.div 
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', stiffness: 450, damping: 18, delay: 0.1 }}
+                  className="text-5xl sm:text-6xl inline-block"
+                >
                   {chosenMeal.imageEmoji}
-                </div>
+                </motion.div>
 
                 <div className="space-y-1">
                   <span className="text-[11px] uppercase tracking-widest text-amber-600 dark:text-amber-400 font-bold block">
@@ -234,44 +248,50 @@ export const BlindModeModal: React.FC<BlindModeModalProps> = ({
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 italic pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
                   "{chosenMeal.vibe}"
                 </p>
-              </div>
+              </motion.div>
 
               {/* Contextual Action Buttons */}
               <div className="space-y-2.5 pt-1">
                 {chosenMeal.type === 'delivery' ? (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.96 }}
                     id="btn-blind-delivery"
                     onClick={handleOpenDelivery}
-                    className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs flex items-center justify-center gap-2 btn-press cursor-pointer shadow-md shadow-amber-500/20"
+                    className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-amber-500/20 transition-colors"
                   >
                     <span>Buscar en la app de delivery</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </motion.button>
                 ) : (
                   chosenMeal.type === 'cooking' && onOpenRecipeModal && (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -1 }}
+                      whileTap={{ scale: 0.96 }}
                       id="btn-blind-view-recipe"
                       onClick={() => {
                         sound.playClick(800);
                         onClose();
                         onOpenRecipeModal(chosenMeal);
                       }}
-                      className="w-full py-3.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-100 font-medium text-xs flex items-center justify-center gap-2 border border-black/[0.08] dark:border-white/[0.08] btn-press cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-100 font-semibold text-xs flex items-center justify-center gap-2 border border-black/[0.08] dark:border-white/[0.08] cursor-pointer transition-colors shadow-2xs"
                     >
                       <ChefHat className="w-3.5 h-3.5 text-amber-500" />
                       <span>Ver Receta en 3 Pasos</span>
-                    </button>
+                    </motion.button>
                   )
                 )}
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.96 }}
                   id="btn-blind-accept"
                   onClick={handleAccept}
-                  className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center justify-center gap-2 shadow-md btn-press cursor-pointer"
+                  className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
                   <span>¡Acepto el plato!</span>
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           )}

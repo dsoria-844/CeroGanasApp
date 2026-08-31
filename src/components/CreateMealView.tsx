@@ -17,8 +17,10 @@ import {
   Utensils,
   Layers,
   Flame,
-  Star
+  Star,
+  Undo2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Recipe, DeliveryOption } from '../types';
 import { 
   loadCustomMeals, 
@@ -61,6 +63,8 @@ const FOOD_CATEGORIES = [
   { id: 'Otras Comidas', label: '🍲 Otras Comidas' },
 ];
 
+const POPULAR_EMOJIS = ['🥩', '🍝', '🍕', '🍔', '🍗', '🐟', '🥗', '🥑', '🍰', '🍲', '🌮', '🍣', '🥪', '🥟', '🥘', '🍳', '🍛', '🍜'];
+
 export const CreateMealView: React.FC = () => {
   const [catalog, setCatalog] = useState<{ delivery: DeliveryOption[]; recipes: Recipe[]; customCount: number }>({
     delivery: [],
@@ -98,8 +102,9 @@ export const CreateMealView: React.FC = () => {
   const [description, setDescription] = useState('');
   const [deliveryCategory, setDeliveryCategory] = useState<'typical' | 'cheat_meal' | 'healthy' | 'economic'>('typical');
 
-  // Notifications
+  // Notifications & Undo
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [undoItem, setUndoItem] = useState<{ id: string; name: string } | null>(null);
   const formScrollRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
@@ -110,7 +115,7 @@ export const CreateMealView: React.FC = () => {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   const refreshCatalog = () => {
@@ -295,66 +300,93 @@ export const CreateMealView: React.FC = () => {
     sound.playClick(400);
     triggerHaptic('medium');
     deleteAnyMeal(id);
+    setUndoItem({ id, name: mealName });
     refreshCatalog();
     showToast(`"${mealName}" ha sido eliminado`);
   };
 
-  const handleRestoreAll = () => {
+  const handleUndoDelete = () => {
+    if (!undoItem) return;
     sound.playSuccess();
     triggerHaptic('success');
+    restoreDeletedMeal(undoItem.id);
+    refreshCatalog();
+    showToast(`"${undoItem.name}" restaurado`);
+    setUndoItem(null);
+  };
+
+  const handleRestoreAll = () => {
+    sound.playClick(700);
+    triggerHaptic('light');
     deletedIds.forEach(id => restoreDeletedMeal(id));
     refreshCatalog();
-    showToast('Platos originales restaurados');
+    showToast('Todos los platos eliminados han sido restaurados');
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6 pb-24">
-      {/* Header & Create Action */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
-            <Utensils className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
-            <span>Gestión de Platos</span>
-          </h2>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-            Catálogo completo ({allMeals.length} platos disponibles)
-          </p>
+    <div className="space-y-4 max-w-4xl mx-auto pb-10">
+      {/* Toast Notification with Undo */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] px-4 py-2.5 rounded-2xl bg-zinc-900/95 text-white dark:bg-white/95 dark:text-zinc-900 text-xs font-semibold shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/10 dark:border-black/10"
+          >
+            <span className="truncate max-w-[220px] sm:max-w-xs">{toastMessage}</span>
+            {undoItem && (
+              <button
+                onClick={handleUndoDelete}
+                className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-[11px] flex items-center gap-1 btn-press cursor-pointer shrink-0 shadow-xs"
+              >
+                <Undo2 className="w-3 h-3" />
+                <span>Deshacer</span>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header & Main Actions */}
+      <div className="apple-card p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+              <Utensils className="w-6 h-6 text-amber-500" />
+              <span>Mis Platos & Recetas</span>
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Administra el catálogo completo de platos. Puedes editar, borrar o agregar nuevos.
+            </p>
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={handleOpenCreateForm}
+            className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 btn-press cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Crear Nuevo Plato</span>
+          </motion.button>
         </div>
 
-        <button
-          onClick={handleOpenCreateForm}
-          className="px-4 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-semibold text-xs flex items-center gap-1.5 shadow-xs btn-press cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Nuevo Plato</span>
-        </button>
-      </div>
-
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="p-3 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-xs font-semibold flex items-center gap-2 shadow-lg animate-in fade-in slide-in-from-top-2">
-          <Check className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Filter & Search Bar */}
-      <div className="apple-card p-4 sm:p-5 space-y-3">
-        {/* Search */}
+        {/* Search Bar */}
         <div className="relative">
           <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Buscar por nombre, ingrediente o etiqueta..."
+            placeholder="Buscar plato por nombre, ingrediente o etiqueta..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
           />
         </div>
 
         {/* Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {[
               { id: 'all', label: `Todos (${allMeals.length})` },
               { id: 'cooking', label: `Cocinar (${allMeals.filter(m => m.type === 'cooking').length})` },
@@ -369,10 +401,10 @@ export const CreateMealView: React.FC = () => {
                     sound.playClick(750);
                     setActiveFilter(f.id as any);
                   }}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all btn-press cursor-pointer border ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all btn-press cursor-pointer border ${
                     isSelected
-                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-semibold shadow-xs'
-                      : 'bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 border-black/[0.06] dark:border-white/[0.08]'
+                      ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent font-bold shadow-xs'
+                      : 'bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50 dark:hover:bg-zinc-800'
                   }`}
                 >
                   {f.label}
@@ -394,8 +426,8 @@ export const CreateMealView: React.FC = () => {
         </div>
       </div>
 
-      {/* Meals List */}
-      <div className="space-y-3">
+      {/* Meals List with Spring Layout Transitions */}
+      <motion.div layout className="space-y-2.5">
         {filteredMeals.length === 0 ? (
           <div className="apple-card p-10 text-center space-y-2 text-zinc-400">
             <Utensils className="w-8 h-8 mx-auto stroke-1" />
@@ -407,472 +439,582 @@ export const CreateMealView: React.FC = () => {
             </p>
           </div>
         ) : (
-          filteredMeals.map(meal => (
-            <div
-              key={meal.id}
-              className="apple-card p-4 sm:p-5 flex items-center justify-between gap-4 hover:shadow-md transition-shadow group"
-            >
-              {/* Left Info */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-2xl shadow-xs shrink-0 group-hover:scale-105 transition-transform">
-                  {meal.imageEmoji}
-                </div>
+          <AnimatePresence>
+            {filteredMeals.map(meal => (
+              <motion.div
+                key={meal.id}
+                layout
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="apple-card p-3.5 sm:p-4.5 flex items-center justify-between gap-3 hover:shadow-md transition-shadow group"
+              >
+                {/* Left Info */}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-2xl shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                    {meal.imageEmoji}
+                  </div>
 
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
-                      {meal.name}
-                    </h4>
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
+                        {meal.name}
+                      </h4>
 
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      meal.type === 'cooking'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
-                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
-                    }`}>
-                      {meal.type === 'cooking' ? '🍳 Cocinar' : '🛵 Delivery'}
-                    </span>
-
-                    {meal.isCustom && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-500/20 flex items-center gap-0.5">
-                        <Star className="w-2.5 h-2.5 fill-current" />
-                        <span>Creado por mí</span>
+                      <span className={`text-[9.5px] sm:text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        meal.type === 'cooking'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+                      }`}>
+                        {meal.type === 'cooking' ? '🍳 Cocina' : '🛵 Delivery'}
                       </span>
-                    )}
-                  </div>
 
-                  <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
-                    <span className="flex items-center gap-1 font-medium">
-                      <Clock className="w-3 h-3 text-zinc-400" />
-                      <span>{meal.timeEstimate}</span>
-                    </span>
-                    <span>•</span>
-                    <span className="truncate">{meal.categoryLabel}</span>
-                    {meal.ingredients.length > 0 && (
-                      <>
-                        <span>•</span>
-                        <span className="text-zinc-400 truncate max-w-[200px] hidden sm:inline">
-                          {meal.ingredients.slice(0, 3).join(', ')}
+                      {meal.isCustom && (
+                        <span className="text-[9.5px] sm:text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-500/20 flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>Creado</span>
                         </span>
-                      </>
-                    )}
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 flex-wrap">
+                      <span className="flex items-center gap-1 font-medium">
+                        <Clock className="w-3 h-3 text-zinc-400" />
+                        <span>{meal.timeEstimate}</span>
+                      </span>
+                      <span>•</span>
+                      <span className="truncate">{meal.categoryLabel}</span>
+                      {meal.ingredients.length > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="text-zinc-400 truncate max-w-[180px] hidden sm:inline">
+                            {meal.ingredients.slice(0, 3).join(', ')}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Right Action Icons (CRUD: View, Edit, Delete) */}
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* View Details Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      sound.playClick(600);
+                      setPreviewMeal(meal);
+                    }}
+                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
+                    title="Ver detalles completos"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </motion.button>
+
+                  {/* Edit Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleOpenEditForm(meal)}
+                    className="p-2 rounded-xl text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 btn-press cursor-pointer"
+                    title="Editar plato"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </motion.button>
+
+                  {/* Delete Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleDelete(meal.id, meal.name)}
+                    className="p-2 rounded-xl text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 btn-press cursor-pointer"
+                    title="Eliminar plato del catálogo"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+      </motion.div>
+
+      {/* MODAL 1: CREATE / EDIT FORM (INTERACTIVE BOTTOM SHEET WITH LIVE PREVIEW) */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsFormOpen(false);
+            }}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md overflow-hidden select-none overscroll-none touch-none"
+          >
+            <motion.div 
+              initial={{ y: '100%', opacity: 0.8 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.8 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 350, mass: 0.8 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex flex-col overflow-hidden overscroll-contain touch-auto"
+            >
+              {/* Top Drag Indicator on Mobile */}
+              <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 mx-auto mt-2.5 sm:hidden shrink-0" />
+              
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 pb-3 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 shrink-0">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                    {editingMealId ? 'Editar Plato' : 'Crear Nuevo Plato'}
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {editingMealId ? 'Modifica los datos del plato y mira el resultado en vivo' : 'Agrega un nuevo plato a tu catálogo'}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsFormOpen(false)}
+                  className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Segmented Mode Switch with Sliding Spring Pill */}
+              <div className="px-4 sm:px-5 pt-3 shrink-0">
+                <div className="flex p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick(700);
+                      setActiveType('cooking');
+                    }}
+                    className={`relative z-10 flex-1 py-2 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                      activeType === 'cooking' ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    {activeType === 'cooking' && (
+                      <motion.div
+                        layoutId="segmented-meal-type"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-xl shadow-xs border border-emerald-500/20"
+                      />
+                    )}
+                    <ChefHat className="w-3.5 h-3.5 relative z-10" />
+                    <span className="relative z-10">Cocinar en Casa</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick(700);
+                      setActiveType('delivery');
+                    }}
+                    className={`relative z-10 flex-1 py-2 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                      activeType === 'delivery' ? 'text-amber-700 dark:text-amber-300' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    {activeType === 'delivery' && (
+                      <motion.div
+                        layoutId="segmented-meal-type"
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-xl shadow-xs border border-amber-500/20"
+                      />
+                    )}
+                    <Bike className="w-3.5 h-3.5 relative z-10" />
+                    <span className="relative z-10">Pedir Delivery</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Right Action Icons (CRUD: View, Edit, Delete) */}
-              <div className="flex items-center gap-1 shrink-0">
-                {/* View Details Button */}
-                <button
-                  onClick={() => {
-                    sound.playClick(600);
-                    setPreviewMeal(meal);
-                  }}
-                  className="p-2 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 btn-press cursor-pointer"
-                  title="Ver detalles completos"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
+              {/* Scrollable Form Body with Live Card Preview */}
+              <form ref={formScrollRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+                {/* Live Card Preview Box */}
+                <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/70 border border-black/[0.06] dark:border-white/[0.08] flex items-center gap-3.5 shadow-2xs">
+                  <div className="w-13 h-13 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-3xl shadow-xs shrink-0">
+                    {emoji || '🍲'}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                        {name.trim() || 'Nombre del plato'}
+                      </span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        activeType === 'cooking'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                          : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+                      }`}>
+                        {activeType === 'cooking' ? 'Cocinar' : 'Delivery'}
+                      </span>
+                    </div>
+                    <p className="text-[10.5px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {mealCategory} • {timeEstimate || 20} min {activeType === 'cooking' ? `• ${difficulty}` : ''}
+                    </p>
+                    {ingredientsList.length > 0 && (
+                      <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">
+                        {ingredientsList.slice(0, 4).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-[8.5px] font-extrabold text-zinc-400 uppercase tracking-wider px-2 py-1 rounded-md bg-zinc-200/50 dark:bg-zinc-800 shrink-0">
+                    En Vivo
+                  </span>
+                </div>
 
-                {/* Edit Button */}
-                <button
-                  onClick={() => handleOpenEditForm(meal)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 btn-press cursor-pointer"
-                  title="Editar plato"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
+                {/* Row 1: Nombre + Emoji Input & Quick Emoji Selector */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                        Nombre del Plato *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Tarta de zapallitos, Milanesas..."
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
+                      />
+                    </div>
 
-                {/* Delete Button */}
-                <button
-                  onClick={() => handleDelete(meal.id, meal.name)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 btn-press cursor-pointer"
-                  title="Eliminar plato del catálogo"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))
+                    <div className="w-16 space-y-1 shrink-0">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider text-center block">
+                        Emoji
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={emoji}
+                        onChange={e => setEmoji(e.target.value)}
+                        className="w-full py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-center text-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 1-Tap Quick Emoji Picker Bar */}
+                  <div className="space-y-1">
+                    <span className="text-[9.5px] font-semibold text-zinc-400">Sugerencias rápidas:</span>
+                    <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
+                      {POPULAR_EMOJIS.map(em => (
+                        <motion.button
+                          key={em}
+                          type="button"
+                          whileTap={{ scale: 0.88 }}
+                          onClick={() => {
+                            sound.playTick(700);
+                            setEmoji(em);
+                          }}
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-base shrink-0 transition-all border cursor-pointer ${
+                            emoji === em
+                              ? 'bg-amber-500/20 border-amber-500 shadow-xs scale-105'
+                              : 'bg-zinc-50 dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.06] hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          }`}
+                        >
+                          {em}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Categoría Universal + Tiempo */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider flex items-center gap-1">
+                      <span>Categoría *</span>
+                    </label>
+                    <select
+                      value={mealCategory}
+                      onChange={e => setMealCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    >
+                      {FOOD_CATEGORIES.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                      Tiempo (min)
+                    </label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="120"
+                      value={timeEstimate}
+                      onChange={e => setTimeEstimate(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 3: Dificultad o Estilo de Delivery */}
+                <div className="grid grid-cols-2 gap-2">
+                  {activeType === 'cooking' ? (
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                        Dificultad
+                      </label>
+                      <select
+                        value={difficulty}
+                        onChange={e => setDifficulty(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      >
+                        <option value="Fácil">Fácil</option>
+                        <option value="Media">Media</option>
+                        <option value="Difícil">Difícil</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                        Estilo de Delivery
+                      </label>
+                      <select
+                        value={deliveryCategory}
+                        onChange={e => setDeliveryCategory(e.target.value as any)}
+                        className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                      >
+                        <option value="typical">Típico / Clásico</option>
+                        <option value="cheat_meal">Antojo / Cheat Meal</option>
+                        <option value="healthy">Saludable</option>
+                        <option value="economic">Económico</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                      Etiquetas (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="rápido, cena..."
+                      value={tagsInput}
+                      onChange={e => setTagsInput(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Ingredientes clave con Spring Chips */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Ingredientes Clave
+                  </label>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Escribe ingrediente y pulsa Enter..."
+                      value={ingredientInput}
+                      onChange={e => setIngredientInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddIngredient();
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.94 }}
+                      type="button"
+                      onClick={handleAddIngredient}
+                      className="px-3.5 py-2 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-xs font-bold btn-press cursor-pointer shrink-0 shadow-xs"
+                    >
+                      + Agregar
+                    </motion.button>
+                  </div>
+
+                  {ingredientsList.length > 0 && (
+                    <motion.div layout className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto">
+                      <AnimatePresence>
+                        {ingredientsList.map((ing, idx) => (
+                          <motion.span
+                            key={ing}
+                            layout
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.7 }}
+                            transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-[11px] font-medium border border-black/[0.04] dark:border-white/[0.04] shadow-2xs"
+                          >
+                            <span>{ing}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveIngredient(idx)}
+                              className="text-zinc-400 hover:text-red-500 cursor-pointer p-0.5 rounded-full"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </motion.span>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Pasos de Preparación (Cocinar) o Descripción (Delivery) */}
+                {activeType === 'cooking' ? (
+                  <div className="space-y-1.5 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                      Pasos de Cocina (3 Pasos Simples)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Paso 1: Saltear y preparar ingredientes..."
+                      value={step1}
+                      onChange={e => setStep1(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Paso 2: Cocinar a fuego medio y condimentar..."
+                      value={step2}
+                      onChange={e => setStep2(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Paso 3: Servir caliente..."
+                      value={step3}
+                      onChange={e => setStep3(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Tip del chef (opcional)..."
+                      value={chefTip}
+                      onChange={e => setChefTip(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
+                      Descripción del Delivery
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Detalles para pedir por app de delivery..."
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
+                    />
+                  </div>
+                )}
+
+                {/* Bottom Sticky Action Bar */}
+                <div className="pt-3 pb-1 flex items-center justify-end gap-2 border-t border-black/[0.06] dark:border-white/[0.06] sticky bottom-0 bg-white dark:bg-zinc-900 z-20">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    type="button"
+                    onClick={() => setIsFormOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold btn-press cursor-pointer"
+                  >
+                    Cancelar
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs btn-press cursor-pointer shadow-sm shadow-amber-500/20"
+                  >
+                    {editingMealId ? 'Guardar Cambios' : 'Crear Plato'}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* MODAL 1: CREATE / EDIT FORM (MOBILE-FIRST COMPACT REDESIGN) */}
-      {isFormOpen && (
-        <div 
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsFormOpen(false);
-          }}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-md overflow-hidden select-none overscroll-none touch-none"
-        >
+      {/* MODAL 2: DETAIL PREVIEW WITH SPRING EXIT */}
+      <AnimatePresence>
+        {previewMeal && (
           <div 
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] shadow-2xl flex flex-col overflow-hidden overscroll-contain touch-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewMeal(null);
+            }}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-hidden overscroll-none touch-none"
           >
-            
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 pb-3 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3 shrink-0">
-              <div>
-                <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  {editingMealId ? 'Editar Plato' : 'Crear Nuevo Plato'}
-                </h3>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {editingMealId ? 'Modifica los datos del plato' : 'Agrega un plato a tu catálogo'}
-                </p>
-              </div>
-
+            <motion.div 
+              initial={{ scale: 0.92, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 12 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 space-y-4 shadow-2xl overscroll-contain touch-auto"
+            >
               <button
-                onClick={() => setIsFormOpen(false)}
-                className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer shrink-0"
+                onClick={() => setPreviewMeal(null)}
+                className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
-            </div>
 
-            {/* Segmented Mode Switch */}
-            <div className="px-4 sm:px-5 pt-3 shrink-0">
-              <div className="flex p-1 rounded-2xl bg-zinc-100 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06]">
-                <button
-                  type="button"
-                  onClick={() => setActiveType('cooking')}
-                  className={`flex-1 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    activeType === 'cooking'
-                      ? 'bg-white dark:bg-zinc-800 text-emerald-700 dark:text-emerald-300 shadow-xs border border-emerald-500/20'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  }`}
-                >
-                  <ChefHat className="w-3.5 h-3.5" />
-                  <span>Cocinar en Casa</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveType('delivery')}
-                  className={`flex-1 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    activeType === 'delivery'
-                      ? 'bg-white dark:bg-zinc-800 text-amber-700 dark:text-amber-300 shadow-xs border border-amber-500/20'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  }`}
-                >
-                  <Bike className="w-3.5 h-3.5" />
-                  <span>Pedir Delivery</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Form Body */}
-            <form ref={formScrollRef} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
-              {/* Row 1: Nombre + Emoji */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                    Nombre del Plato *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Tarta de zapallitos, Milanesas..."
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
-                  />
+              <div className="text-center space-y-2 pt-2">
+                <div className="w-16 h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-4xl mx-auto shadow-xs">
+                  {previewMeal.imageEmoji}
                 </div>
-
-                <div className="w-16 space-y-1 shrink-0">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider text-center block">
-                    Emoji
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    value={emoji}
-                    onChange={e => setEmoji(e.target.value)}
-                    className="w-full py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-center text-lg text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                </div>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {previewMeal.name}
+                </h3>
+                <p className="text-xs text-zinc-500 font-medium">
+                  {previewMeal.categoryLabel} • {previewMeal.timeEstimate}
+                </p>
               </div>
 
-              {/* Row 2: Categoría Universal (OBLIGATORIA PARA TODOS LOS PLATOS) + Tiempo */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider flex items-center gap-1">
-                    <span>Categoría *</span>
-                  </label>
-                  <select
-                    value={mealCategory}
-                    onChange={e => setMealCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  >
-                    {FOOD_CATEGORIES.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                    Tiempo (min)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="120"
-                    value={timeEstimate}
-                    onChange={e => setTimeEstimate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Dificultad o Tipo de Delivery */}
-              <div className="grid grid-cols-2 gap-2">
-                {activeType === 'cooking' ? (
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                      Dificultad
-                    </label>
-                    <select
-                      value={difficulty}
-                      onChange={e => setDifficulty(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                    >
-                      <option value="Fácil">Fácil</option>
-                      <option value="Difícil">Difícil</option>
-                      <option value="Media">Media</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                      Estilo de Delivery
-                    </label>
-                    <select
-                      value={deliveryCategory}
-                      onChange={e => setDeliveryCategory(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                    >
-                      <option value="typical">Típico / Clásico</option>
-                      <option value="cheat_meal">Antojo / Cheat Meal</option>
-                      <option value="healthy">Saludable</option>
-                      <option value="economic">Económico</option>
-                    </select>
-                  </div>
-                )}
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                    Etiquetas (opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="rápido, cena..."
-                    value={tagsInput}
-                    onChange={e => setTagsInput(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Ingredientes clave */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                  Ingredientes Clave
-                </label>
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    placeholder="Escribe ingrediente y pulsa Enter..."
-                    value={ingredientInput}
-                    onChange={e => setIngredientInput(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddIngredient();
-                      }
-                    }}
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddIngredient}
-                    className="px-3 py-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold btn-press cursor-pointer shrink-0"
-                  >
-                    + Agregar
-                  </button>
-                </div>
-
-                {ingredientsList.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1 max-h-20 overflow-y-auto">
-                    {ingredientsList.map((ing, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-[11px] font-medium"
-                      >
-                        <span>{ing}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIngredient(idx)}
-                          className="text-zinc-400 hover:text-red-500"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
+              {previewMeal.recipe && (
+                <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Pasos de Cocina:
+                  </span>
+                  <div className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                    {previewMeal.recipe.steps.map((step, idx) => (
+                      <div key={idx} className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 flex items-start gap-2">
+                        <span className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <p>{step}</p>
+                      </div>
                     ))}
                   </div>
-                )}
-              </div>
-
-              {/* Pasos de Preparación (Cocinar) o Descripción (Delivery) */}
-              {activeType === 'cooking' ? (
-                <div className="space-y-1.5 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                    Pasos de Cocina
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Paso 1: Saltear y preparar ingredientes..."
-                    value={step1}
-                    onChange={e => setStep1(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Paso 2: Cocinar a fuego medio y condimentar..."
-                    value={step2}
-                    onChange={e => setStep2(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Paso 3: Servir caliente..."
-                    value={step3}
-                    onChange={e => setStep3(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Tip del chef (opcional)..."
-                    value={chefTip}
-                    onChange={e => setChefTip(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-1 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
-                  <label className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
-                    Descripción del Delivery
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Detalles para pedir por app de delivery..."
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none resize-none"
-                  />
                 </div>
               )}
 
-              {/* Bottom Sticky Action Bar */}
-              <div className="pt-3 pb-1 flex items-center justify-end gap-2 border-t border-black/[0.06] dark:border-white/[0.06] sticky bottom-0 bg-white dark:bg-zinc-900">
-                <button
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold btn-press cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs btn-press cursor-pointer shadow-sm shadow-amber-500/20"
-                >
-                  {editingMealId ? 'Guardar Cambios' : 'Crear Plato'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: DETAIL PREVIEW */}
-      {previewMeal && (
-        <div 
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewMeal(null);
-          }}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-hidden overscroll-none touch-none"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.1] p-6 space-y-4 shadow-2xl overscroll-contain touch-auto"
-          >
-            <button
-              onClick={() => setPreviewMeal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 btn-press cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="text-center space-y-2 pt-2">
-              <div className="w-16 h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-4xl mx-auto shadow-xs">
-                {previewMeal.imageEmoji}
-              </div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                {previewMeal.name}
-              </h3>
-              <p className="text-xs text-zinc-500 font-medium">
-                {previewMeal.categoryLabel} • {previewMeal.timeEstimate}
-              </p>
-            </div>
-
-            {previewMeal.recipe && (
-              <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
-                <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
-                  Pasos de Cocina:
-                </span>
-                <div className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
-                  {previewMeal.recipe.steps.map((step, idx) => (
-                    <div key={idx} className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 flex items-start gap-2">
-                      <span className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                        {idx + 1}
-                      </span>
-                      <p>{step}</p>
-                    </div>
-                  ))}
+              {previewMeal.delivery && (
+                <div className="space-y-1.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
+                  <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
+                    Descripción:
+                  </span>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {previewMeal.delivery.description}
+                  </p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {previewMeal.delivery && (
-              <div className="space-y-1.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
-                <span className="text-[11px] uppercase font-bold text-zinc-400 tracking-wider">
-                  Descripción:
-                </span>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  {previewMeal.delivery.description}
-                </p>
+              <div className="pt-2">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    setPreviewMeal(null);
+                    handleOpenEditForm(previewMeal);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold btn-press cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Editar este plato</span>
+                </motion.button>
               </div>
-            )}
-
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  setPreviewMeal(null);
-                  handleOpenEditForm(previewMeal);
-                }}
-                className="w-full py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold btn-press cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Editar este plato</span>
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

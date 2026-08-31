@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldAlert, 
   Plus, 
@@ -10,26 +10,26 @@ import {
   Moon, 
   Volume2, 
   VolumeX, 
-  Check,
-  Sparkles,
-  Trophy,
-  Bike,
-  Smartphone
+  Check, 
+  Sparkles, 
+  Trophy, 
+  Bike, 
+  Smartphone 
 } from 'lucide-react';
 import { COMMON_EXCLUSIONS } from '../data/mealsData';
 import { ModalityFilter } from '../types';
 import { 
   saveExclusionsToStorage, 
   triggerHaptic, 
-  loadDuelThreshold,
-  saveDuelThreshold,
-  loadDuelEnabled,
-  saveDuelEnabled,
-  loadPreferredModality,
-  savePreferredModality,
-  loadDefaultDeliveryApp,
-  saveDefaultDeliveryApp,
-  DeliveryApp
+  loadDuelThreshold, 
+  saveDuelThreshold, 
+  loadDuelEnabled, 
+  saveDuelEnabled, 
+  loadPreferredModality, 
+  savePreferredModality, 
+  loadDefaultDeliveryApp, 
+  saveDefaultDeliveryApp, 
+  DeliveryApp 
 } from '../utils/storage';
 import { Theme } from '../utils/theme';
 import { sound } from '../utils/audio';
@@ -148,7 +148,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6 pb-24">
+    <div className="w-full max-w-2xl mx-auto space-y-6 pb-24 select-none">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -202,85 +202,98 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </button>
         </div>
 
-        {/* Threshold controls (Only visible when Sorteo Final is enabled) */}
-        {isDuelEnabled && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-4 pt-1"
-          >
-            {/* Interactive Stepper & Direct Number Input */}
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
-              <div className="space-y-0.5">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Platos a acumular
-                </span>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  Mínimo 2 • Máximo 20 platos
-                </p>
-              </div>
+        {/* Threshold controls (Smooth Accordion) */}
+        <AnimatePresence initial={false}>
+          {isDuelEnabled && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+              className="overflow-hidden space-y-4 pt-1"
+            >
+              {/* Interactive Stepper & Direct Number Input */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] gap-4">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                    Platos a acumular
+                  </span>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Mínimo 2 • Máximo 20 platos
+                  </p>
+                </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={duelThreshold <= 2}
-                  onClick={() => handleSelectThreshold(Math.max(2, duelThreshold - 1))}
-                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
-                  title="Disminuir"
-                >
-                  -
-                </button>
-
-                <input
-                  type="number"
-                  min={2}
-                  max={20}
-                  value={duelThreshold}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val)) {
-                      const clamped = Math.min(20, Math.max(2, val));
-                      handleSelectThreshold(clamped);
-                    }
-                  }}
-                  className="w-14 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-center font-extrabold text-base text-zinc-900 dark:text-zinc-100 shadow-2xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
-                />
-
-                <button
-                  type="button"
-                  disabled={duelThreshold >= 20}
-                  onClick={() => handleSelectThreshold(Math.min(20, duelThreshold + 1))}
-                  className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 btn-press cursor-pointer shadow-2xs"
-                  title="Aumentar"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Quick presets */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] text-zinc-400 font-semibold mr-1">Atajos rápidos:</span>
-              {[2, 3, 5, 8, 10, 15, 20].map(count => {
-                const isSelected = duelThreshold === count;
-                return (
-                  <button
-                    key={count}
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
                     type="button"
-                    onClick={() => handleSelectThreshold(count)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all btn-press cursor-pointer border ${
-                      isSelected
-                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
-                        : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50'
-                    }`}
+                    disabled={duelThreshold <= 2}
+                    onClick={() => handleSelectThreshold(Math.max(2, duelThreshold - 1))}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 cursor-pointer shadow-2xs"
+                    title="Disminuir"
                   >
-                    {count} {count === 1 ? 'plato' : 'platos'}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
+                    -
+                  </motion.button>
+
+                  <input
+                    type="number"
+                    min={2}
+                    max={20}
+                    value={duelThreshold}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        const clamped = Math.min(20, Math.max(2, val));
+                        handleSelectThreshold(clamped);
+                      }
+                    }}
+                    className="w-14 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-center font-extrabold text-base text-zinc-900 dark:text-zinc-100 shadow-2xs focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
+                  />
+
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    type="button"
+                    disabled={duelThreshold >= 20}
+                    onClick={() => handleSelectThreshold(Math.min(20, duelThreshold + 1))}
+                    className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-center font-bold text-base text-zinc-800 dark:text-zinc-200 disabled:opacity-30 cursor-pointer shadow-2xs"
+                    title="Aumentar"
+                  >
+                    +
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Quick presets with sliding spring pill */}
+              <div className="flex items-center gap-1.5 flex-wrap relative">
+                <span className="text-[11px] text-zinc-400 font-semibold mr-1">Atajos rápidos:</span>
+                {[2, 3, 5, 8, 10, 15, 20].map(count => {
+                  const isSelected = duelThreshold === count;
+                  return (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => handleSelectThreshold(count)}
+                      className={`relative px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'text-white dark:text-zinc-900 font-bold'
+                          : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-50'
+                      }`}
+                    >
+                      {isSelected && (
+                        <motion.div
+                          layoutId="settings-duel-preset-pill"
+                          transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                          className="absolute inset-0 rounded-full bg-zinc-900 dark:bg-white shadow-xs -z-0"
+                        />
+                      )}
+                      <span className="relative z-10">{count} {count === 1 ? 'plato' : 'platos'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* SECCIÓN 2: MODALIDAD PREDETERMINADA DE COMIDAS */}
@@ -305,17 +318,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           ].map(opt => {
             const isSelected = preferredModality === opt.id;
             return (
-              <button
+              <motion.button
                 key={opt.id}
                 type="button"
+                whileTap={{ scale: 0.96 }}
                 onClick={() => handleSelectModality(opt.id)}
-                className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all btn-press cursor-pointer border ${
+                className={`relative p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-colors cursor-pointer border overflow-hidden ${
                   isSelected
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
+                    ? 'border-transparent shadow-xs text-white dark:text-zinc-900 font-bold'
                     : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-850'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-left">
+                {isSelected && (
+                  <motion.div
+                    layoutId="settings-modality-pill"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                    className="absolute inset-0 bg-zinc-900 dark:bg-white shadow-xs -z-0"
+                  />
+                )}
+                <div className="flex items-center gap-2.5 text-left relative z-10">
                   <span className="text-xl">{opt.emoji}</span>
                   <div>
                     <p className="text-xs font-bold leading-tight">{opt.label}</p>
@@ -324,8 +345,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </p>
                   </div>
                 </div>
-                {isSelected && <Check className="w-4 h-4 shrink-0" />}
-              </button>
+                {isSelected && <Check className="w-4 h-4 shrink-0 relative z-10" />}
+              </motion.button>
             );
           })}
         </div>
@@ -353,16 +374,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           ].map(app => {
             const isSelected = defaultDeliveryApp === app.id;
             return (
-              <button
+              <motion.button
                 key={app.id}
+                type="button"
+                whileTap={{ scale: 0.96 }}
                 onClick={() => handleSelectDeliveryApp(app.id as DeliveryApp)}
-                className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-all btn-press cursor-pointer border ${
+                className={`relative p-3.5 rounded-2xl flex items-center justify-between gap-3 transition-colors cursor-pointer border overflow-hidden ${
                   isSelected
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-transparent shadow-xs'
+                    ? 'border-transparent shadow-xs text-white dark:text-zinc-900 font-bold'
                     : 'bg-zinc-50 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-zinc-800'
                 }`}
               >
-                <div className="flex items-center gap-2.5 text-left">
+                {isSelected && (
+                  <motion.div
+                    layoutId="settings-delivery-app-pill"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                    className="absolute inset-0 bg-zinc-900 dark:bg-white shadow-xs -z-0"
+                  />
+                )}
+                <div className="flex items-center gap-2.5 text-left relative z-10">
                   <span className="text-xl">{app.emoji}</span>
                   <div>
                     <p className="text-xs font-bold leading-tight">{app.label}</p>
@@ -371,14 +401,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     </p>
                   </div>
                 </div>
-                {isSelected && <Check className="w-4 h-4 shrink-0" />}
-              </button>
+                {isSelected && <Check className="w-4 h-4 shrink-0 relative z-10" />}
+              </motion.button>
             );
           })}
         </div>
       </div>
 
-      {/* SECCIÓN 3: BLOQUEO DE INGREDIENTES */}
+      {/* SECCIÓN 4: BLOQUEO DE INGREDIENTES */}
       <div className="apple-card p-6 sm:p-7 space-y-5">
         <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           <div>
@@ -401,12 +431,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {COMMON_EXCLUSIONS.map(item => {
               const isExcluded = exclusions.some(e => e.toLowerCase() === item.id.toLowerCase());
               return (
-                <button
+                <motion.button
                   key={item.id}
+                  whileTap={{ scale: 0.94 }}
                   onClick={() => toggleExclusion(item.id)}
-                  className={`p-2.5 rounded-xl border text-xs font-medium text-left flex items-center justify-between transition-all btn-press cursor-pointer ${
+                  className={`p-2.5 rounded-xl border text-xs font-medium text-left flex items-center justify-between transition-colors cursor-pointer ${
                     isExcluded
-                      ? 'bg-red-50 dark:bg-red-950/40 border-red-500/30 text-red-700 dark:text-red-300'
+                      ? 'bg-red-50 dark:bg-red-950/40 border-red-500/30 text-red-700 dark:text-red-300 shadow-2xs font-semibold'
                       : 'bg-zinc-50 dark:bg-zinc-950 border-black/[0.06] dark:border-white/[0.06] text-zinc-700 dark:text-zinc-300 hover:border-black/[0.12] dark:hover:border-white/[0.12]'
                   }`}
                 >
@@ -416,7 +447,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   ) : (
                     <span className="text-[10px] text-zinc-400">+</span>
                   )}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -433,32 +464,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Ej. cilantro, berenjena, mariscos..."
               value={customInput}
               onChange={e => setCustomInput(e.target.value)}
-              className="flex-1 px-3.5 py-2 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-white"
+              className="flex-1 px-3.5 py-2 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
             />
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               type="submit"
               disabled={!customInput.trim()}
-              className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold btn-press disabled:opacity-40 flex items-center gap-1 cursor-pointer shadow-xs"
+              className="px-4 py-2 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold disabled:opacity-40 flex items-center gap-1 cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Bloquear</span>
-            </button>
+            </motion.button>
           </div>
         </form>
 
-        {/* Active Blocked List */}
+        {/* Active Blocked List with FLIP animations */}
         <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
           <div className="flex items-center justify-between">
             <label className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
               Alimentos evitados ({exclusions.length}):
             </label>
             {exclusions.length > 0 && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.92 }}
                 onClick={clearAllExclusions}
-                className="text-xs text-zinc-400 hover:text-red-500 transition-colors btn-press cursor-pointer"
+                className="text-xs text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
               >
                 Borrar todos
-              </button>
+              </motion.button>
             )}
           </div>
 
@@ -468,26 +501,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
-              {exclusions.map((exc, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200 text-xs font-medium"
-                >
-                  <span>🚫 {exc}</span>
-                  <button
-                    onClick={() => removeExclusion(exc)}
-                    className="text-zinc-400 hover:text-red-500 p-0.5 btn-press cursor-pointer"
+              <AnimatePresence mode="popLayout">
+                {exclusions.map((exc, idx) => (
+                  <motion.span
+                    key={exc}
+                    layout
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-950 border border-black/[0.06] dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200 text-xs font-medium shadow-2xs"
                   >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+                    <span>🚫 {exc}</span>
+                    <motion.button
+                      whileTap={{ scale: 0.8 }}
+                      onClick={() => removeExclusion(exc)}
+                      className="text-zinc-400 hover:text-red-500 p-0.5 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </motion.button>
+                  </motion.span>
+                ))}
+              </AnimatePresence>
             </div>
           )}
         </div>
       </div>
 
-      {/* SECCIÓN 4: PREFERENCIAS DE INTERFAZ & SONIDO */}
+      {/* SECCIÓN 5: PREFERENCIAS DE INTERFAZ & SONIDO */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           Apariencia y sonido
@@ -509,15 +550,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => {
               sound.playClick(600);
               onToggleTheme();
             }}
-            className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-xs btn-press cursor-pointer"
+            className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800 border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold text-zinc-800 dark:text-zinc-200 shadow-xs cursor-pointer"
           >
             Cambiar
-          </button>
+          </motion.button>
         </div>
 
         {/* Audio Effects Toggle */}
@@ -536,23 +578,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={() => {
               sound.playClick(soundEnabled ? 400 : 900);
               onToggleSound();
             }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs btn-press cursor-pointer border ${
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs cursor-pointer border ${
               soundEnabled
                 ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent'
                 : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-black/[0.08] dark:border-white/[0.08]'
             }`}
           >
             {soundEnabled ? 'Activado' : 'Desactivado'}
-          </button>
+          </motion.button>
         </div>
       </div>
 
-      {/* SECCIÓN 5: GESTIÓN DE DATOS */}
+      {/* SECCIÓN 6: GESTIÓN DE DATOS */}
       <div className="apple-card p-6 sm:p-7 space-y-4">
         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 tracking-tight pb-2 border-b border-black/[0.06] dark:border-white/[0.06]">
           Datos
@@ -574,13 +617,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             onClick={handleClearHistoryClick}
-            className="px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-500/20 text-red-700 dark:text-red-300 text-xs font-semibold shadow-xs btn-press cursor-pointer flex items-center gap-1"
+            className="px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-500/20 text-red-700 dark:text-red-300 text-xs font-semibold shadow-xs cursor-pointer flex items-center gap-1"
           >
             {showClearSuccess ? <Check className="w-3 h-3" /> : <Trash2 className="w-3 h-3" />}
             <span>{showClearSuccess ? 'Borrado' : 'Limpiar'}</span>
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>

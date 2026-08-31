@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -9,7 +9,8 @@ import {
   Bike, 
   ChefHat,
   Check,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { UserFavoriteMeal } from '../types';
 import { 
@@ -53,6 +54,17 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
   const [activeFilter, setActiveFilter] = useState<'all' | 'cooking' | 'delivery'>('all');
   const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
 
+  // Undo Toast state
+  const [lastDeletedFavorite, setLastDeletedFavorite] = useState<UserFavoriteMeal | null>(null);
+  const [showUndoToast, setShowUndoToast] = useState<boolean>(false);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
+
   // All pre-loaded catalog meals
   const catalog = useMemo(() => getAllPreloadedMeals(), []);
 
@@ -87,9 +99,30 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
   };
 
   const handleDelete = (id: string) => {
+    const itemToDelete = favorites.find(f => f.id === id);
     sound.playClick(450);
     triggerHaptic('light');
     onDeleteFavorite(id);
+
+    if (itemToDelete) {
+      setLastDeletedFavorite(itemToDelete);
+      setShowUndoToast(true);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => {
+        setShowUndoToast(false);
+        setLastDeletedFavorite(null);
+      }, 4000);
+    }
+  };
+
+  const handleUndoDelete = () => {
+    if (!lastDeletedFavorite) return;
+    sound.playSuccess();
+    triggerHaptic('success');
+    onAddFavorite(lastDeletedFavorite);
+    setShowUndoToast(false);
+    setLastDeletedFavorite(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
   };
 
   const isSearching = inputText.trim().length > 0;
@@ -258,23 +291,25 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                     </div>
 
                     {isFavorited ? (
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleDelete(existingFav!.id)}
-                        className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-rose-500/15 hover:text-rose-600 border border-amber-500/30 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer shrink-0 transition-colors"
+                        className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-rose-500/15 hover:text-rose-600 border border-amber-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 transition-colors"
                         title="Quitar de favoritos"
                       >
                         <Check className="w-3.5 h-3.5 text-amber-500" />
                         <span>Guardado</span>
-                      </button>
+                      </motion.button>
                     ) : (
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleAddCatalogItem(item)}
-                        className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:bg-amber-500 hover:text-zinc-950 dark:hover:bg-amber-400 text-xs font-bold flex items-center gap-1 btn-press cursor-pointer shrink-0 shadow-2xs transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:bg-amber-500 hover:text-zinc-950 dark:hover:bg-amber-400 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-colors"
                         title="Agregar a favoritos"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Sumar</span>
-                      </button>
+                      </motion.button>
                     )}
                   </div>
                 );
@@ -285,52 +320,47 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
       ) : (
         /* NORMAL MODE: User's saved Favorites */
         <div className="space-y-4">
-          {/* Filter Tabs & Counter */}
+          {/* Filter Tabs with Sliding Spring Pill */}
           <div className="flex items-center justify-between gap-2 pt-0.5">
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => {
-                  sound.playClick(750);
-                  setActiveFilter('all');
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer btn-press ${
-                  activeFilter === 'all'
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs'
-                    : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                Todos ({favorites.length})
-              </button>
-
-              <button
-                onClick={() => {
-                  sound.playClick(750);
-                  setActiveFilter('cooking');
-                }}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer btn-press ${
-                  activeFilter === 'cooking'
-                    ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-zinc-950 shadow-xs'
-                    : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                <ChefHat className="w-3 h-3" />
-                <span>Caseros</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  sound.playClick(750);
-                  setActiveFilter('delivery');
-                }}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer btn-press ${
-                  activeFilter === 'delivery'
-                    ? 'bg-amber-500 text-zinc-950 shadow-xs'
-                    : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                }`}
-              >
-                <Bike className="w-3 h-3" />
-                <span>Delivery</span>
-              </button>
+            <div className="flex items-center gap-1.5 relative">
+              {[
+                { id: 'all', label: `Todos (${favorites.length})` },
+                { id: 'cooking', label: 'Caseros', icon: ChefHat },
+                { id: 'delivery', label: 'Delivery', icon: Bike },
+              ].map(tab => {
+                const isSelected = activeFilter === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      sound.playClick(750);
+                      setActiveFilter(tab.id as 'all' | 'cooking' | 'delivery');
+                    }}
+                    className={`relative px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'text-white dark:text-zinc-900 font-bold'
+                        : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                    }`}
+                  >
+                    {isSelected && (
+                      <motion.div
+                        layoutId="favorites-filter-pill"
+                        transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                        className={`absolute inset-0 rounded-full shadow-xs -z-0 ${
+                          tab.id === 'cooking' 
+                            ? 'bg-emerald-600 dark:bg-emerald-500' 
+                            : tab.id === 'delivery'
+                            ? 'bg-amber-500'
+                            : 'bg-zinc-900 dark:bg-white'
+                        }`}
+                      />
+                    )}
+                    {Icon && <Icon className="w-3 h-3 relative z-10" />}
+                    <span className="relative z-10">{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {favorites.length > 0 && (
@@ -366,15 +396,18 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                     const isAdded = favorites.some(f => f.name.toLowerCase() === item.name.toLowerCase());
                     if (isAdded) return null;
                     return (
-                      <button
+                      <motion.button
                         key={idx}
+                        layout
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={() => handleAddCustom(item.name)}
-                        className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 btn-press cursor-pointer shadow-2xs transition-all"
+                        className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
                       >
                         <span>{item.emoji}</span>
                         <span className="font-medium">{item.name}</span>
                         <Plus className="w-3 h-3 text-zinc-400" />
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -389,10 +422,11 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                     <motion.div
                       key={fav.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.92 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
+                      exit={{ opacity: 0, scale: 0.88, y: -8 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                      whileHover={{ y: -1.5 }}
                       className={`p-3 rounded-2xl border flex items-center justify-between gap-3 transition-all ${
                         isRecent
                           ? 'bg-amber-500/10 border-amber-500/50 shadow-md ring-1 ring-amber-500/30'
@@ -411,7 +445,6 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                           <div className="flex items-center gap-2 mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
                             <span className={`inline-flex items-center gap-1 font-medium ${
                               fav.source === 'cooking' 
-                                
                                 ? 'text-emerald-700 dark:text-emerald-400' 
                                 : 'text-amber-700 dark:text-amber-400'
                             }`}>
@@ -434,13 +467,14 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                         </div>
                       </div>
 
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.85 }}
                         onClick={() => handleDelete(fav.id)}
-                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors btn-press cursor-pointer shrink-0"
+                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer shrink-0"
                         title="Eliminar de favoritos"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </motion.button>
                     </motion.div>
                   );
                 })}
@@ -459,15 +493,18 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                   const isAdded = favorites.some(f => f.name.toLowerCase() === item.name.toLowerCase());
                   if (isAdded) return null;
                   return (
-                    <button
+                    <motion.button
                       key={idx}
+                      layout
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleAddCustom(item.name)}
-                      className="px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 flex items-center gap-1 shrink-0 btn-press cursor-pointer transition-all"
+                      className="px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 flex items-center gap-1 shrink-0 cursor-pointer transition-colors"
                     >
                       <span>{item.emoji}</span>
                       <span className="font-medium">{item.name}</span>
                       <Plus className="w-3 h-3 text-zinc-400" />
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -475,6 +512,33 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
           )}
         </div>
       )}
+
+      {/* FLOATING UNDO TOAST */}
+      <AnimatePresence>
+        {showUndoToast && lastDeletedFavorite && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+            className="fixed bottom-4 left-4 right-4 max-w-sm mx-auto z-50 p-3 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-2xl flex items-center justify-between gap-3 border border-white/10 dark:border-black/10"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base">{lastDeletedFavorite.imageEmoji}</span>
+              <span className="text-xs truncate font-medium">
+                Eliminaste «{lastDeletedFavorite.name}»
+              </span>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleUndoDelete}
+              className="px-3 py-1 rounded-xl bg-amber-500 text-zinc-950 font-bold text-xs shrink-0 cursor-pointer shadow-xs"
+            >
+              Deshacer
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 

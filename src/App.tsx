@@ -24,6 +24,7 @@ import {
   addMealToHistory, 
   deleteMealFromHistory, 
   clearMealHistory,
+  restoreMealHistoryItem,
   loadUserFavorites,
   addUserFavoriteMeal,
   deleteUserFavoriteMeal
@@ -114,6 +115,11 @@ export default function App() {
     setHistory(updated);
   };
 
+  const handleRestoreHistoryItem = (item: MealHistoryItem) => {
+    const updated = restoreMealHistoryItem(item);
+    setHistory(updated);
+  };
+
   const handleClearHistory = () => {
     const updated = clearMealHistory();
     setHistory(updated);
@@ -179,7 +185,7 @@ export default function App() {
   }, [activeTab]);
 
   return (
-    <div className={`relative ${activeTab === 'decide' ? 'min-h-screen md:h-screen md:overflow-hidden pb-0' : 'min-h-screen pb-8'} bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 transition-colors duration-200`}>
+    <div className={`relative ${activeTab === 'decide' ? 'h-[100dvh] max-h-[100dvh] overflow-hidden pb-0' : 'min-h-screen pb-8'} bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 transition-colors duration-200`}>
       {/* Sidebar Navigation Drawer */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -206,7 +212,7 @@ export default function App() {
       />
 
       {/* Main Tab Content */}
-      <main className="relative z-10 flex-1 w-full max-w-4xl mx-auto py-2.5 sm:py-3.5 px-4 sm:px-6">
+      <main className={`relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-6 ${activeTab === 'decide' ? 'flex-1 flex flex-col min-h-0 py-1.5 sm:py-2.5 overflow-hidden' : 'py-2.5 sm:py-3.5 flex-1'}`}>
         <AnimatePresence mode="wait">
           {activeTab === 'decide' && (
             <motion.div
@@ -215,6 +221,7 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+              className="h-full w-full flex flex-col min-h-0"
             >
               <DecideTodayView
                 pantry={pantry}
@@ -266,6 +273,7 @@ export default function App() {
                 favorites={favorites}
                 onAddFavorite={handleAddFavorite}
                 onDeleteFavorite={handleDeleteFavorite}
+                onOpenRecipeModal={handleOpenRecipe}
               />
             </motion.div>
           )}
@@ -301,6 +309,7 @@ export default function App() {
                 history={history}
                 onDeleteHistoryItem={handleDeleteHistoryItem}
                 onClearHistory={handleClearHistory}
+                onRestoreHistoryItem={handleRestoreHistoryItem}
               />
             </motion.div>
           )}
