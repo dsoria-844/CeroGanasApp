@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -9,180 +9,58 @@ import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { CreateMealView } from './components/CreateMealView';
 import { BlindModeModal } from './components/BlindModeModal';
-import { OnboardingModal } from './components/OnboardingModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { MealConfirmedModal } from './components/MealConfirmedModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
 import { FavoritesModal } from './components/FavoritesModal';
-import { MealHistoryItem, UserFavoriteMeal, AppTab, Recipe, MealCardItem } from './types';
-import { RECIPES_DATASET } from './data/mealsData';
-import { 
-  loadSavedPantry, 
-  loadMealHistory, 
-  loadExclusions, 
-  addMealToHistory, 
-  deleteMealFromHistory, 
-  clearMealHistory,
-  restoreMealHistoryItem,
-  loadUserFavorites,
-  addUserFavoriteMeal,
-  deleteUserFavoriteMeal
-} from './utils/storage';
-import { Theme, getInitialTheme, applyTheme } from './utils/theme';
-import { sound } from './utils/audio';
+import { useAppState } from './hooks/useAppState';
 import { useBodyScrollLock } from './hooks/useBodyScrollLock';
 
 export default function App() {
-  const [theme, setTheme] = useState<Theme>('light');
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<AppTab>('decide');
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-
-  const [pantry, setPantry] = useState<string[]>([]);
-  const [history, setHistory] = useState<MealHistoryItem[]>([]);
-  const [exclusions, setExclusions] = useState<string[]>([]);
-  const [favorites, setFavorites] = useState<UserFavoriteMeal[]>([]);
-  
-  // Modals
-  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [isBlindModeOpen, setIsBlindModeOpen] = useState(false);
-  const [isExclusionsOpen, setIsExclusionsOpen] = useState(false);
-  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
-  const [acceptedMealConfirmation, setAcceptedMealConfirmation] = useState<{
-    name: string;
-    emoji: string;
-    type: 'delivery' | 'cooking';
-  } | null>(null);
+  const {
+    theme,
+    soundEnabled,
+    activeTab,
+    isSidebarOpen,
+    pantry,
+    history,
+    exclusions,
+    favorites,
+    isWelcomeOpen,
+    isBlindModeOpen,
+    isExclusionsOpen,
+    viewingRecipe,
+    acceptedMealConfirmation,
+    setActiveTab,
+    setIsSidebarOpen,
+    setPantry,
+    setExclusions,
+    setIsWelcomeOpen,
+    setIsBlindModeOpen,
+    setIsExclusionsOpen,
+    setViewingRecipe,
+    setAcceptedMealConfirmation,
+    handleToggleTheme,
+    handleToggleSound,
+    handleAcceptMeal,
+    handleDeleteHistoryItem,
+    handleRestoreHistoryItem,
+    handleClearHistory,
+    handleAddFavorite,
+    handleDeleteFavorite,
+    handleOpenRecipe,
+  } = useAppState();
 
   // Lock background scroll whenever any modal or drawer is active
   useBodyScrollLock(
     isWelcomeOpen ||
-    isOnboardingOpen ||
     isBlindModeOpen ||
     isExclusionsOpen ||
-    isFavoritesOpen ||
     viewingRecipe !== null ||
     acceptedMealConfirmation !== null ||
     isSidebarOpen
   );
-
-  // Initialize Theme and Storage state
-  useEffect(() => {
-    const initialTheme = getInitialTheme();
-    setTheme(initialTheme);
-    applyTheme(initialTheme);
-
-    setPantry(loadSavedPantry());
-    setHistory(loadMealHistory());
-    setExclusions(loadExclusions());
-    setFavorites(loadUserFavorites());
-
-    // Check if user has already seen welcome screen
-    const seenWelcome = localStorage.getItem('cero_ganas_welcome_seen');
-    if (!seenWelcome) {
-      setIsWelcomeOpen(true);
-    }
-  }, []);
-
-  const handleToggleTheme = () => {
-    const nextTheme: Theme = theme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
-  };
-
-  const handleToggleSound = () => {
-    const nextSound = !soundEnabled;
-    setSoundEnabled(nextSound);
-    sound.setEnabled(nextSound);
-  };
-
-  const handleAcceptMeal = (
-    name: string, 
-    type: 'delivery' | 'cooking', 
-    emoji: string, 
-    details?: string
-  ) => {
-    const updatedHistory = addMealToHistory(name, type, emoji, details);
-    setHistory(updatedHistory);
-    setAcceptedMealConfirmation({ name, emoji, type });
-  };
-
-  const handleDeleteHistoryItem = (id: string) => {
-    const updated = deleteMealFromHistory(id);
-    setHistory(updated);
-  };
-
-  const handleRestoreHistoryItem = (item: MealHistoryItem) => {
-    const updated = restoreMealHistoryItem(item);
-    setHistory(updated);
-  };
-
-  const handleClearHistory = () => {
-    const updated = clearMealHistory();
-    setHistory(updated);
-  };
-
-  const handleAddFavorite = (meal: UserFavoriteMeal) => {
-    const updated = addUserFavoriteMeal(meal);
-    setFavorites(updated);
-  };
-
-  const handleDeleteFavorite = (id: string) => {
-    const updated = deleteUserFavoriteMeal(id);
-    setFavorites(updated);
-  };
-
-  const handleOpenRecipe = (recipeOrItem: Recipe | MealCardItem | null) => {
-    if (!recipeOrItem) return;
-    if ('recipe' in recipeOrItem && recipeOrItem.recipe) {
-      setViewingRecipe(recipeOrItem.recipe);
-      return;
-    }
-    if ('steps' in recipeOrItem && Array.isArray((recipeOrItem as Recipe).steps)) {
-      setViewingRecipe(recipeOrItem as Recipe);
-      return;
-    }
-    const found = RECIPES_DATASET.find(
-      r => r.name.toLowerCase().trim() === recipeOrItem.name.toLowerCase().trim()
-    );
-    if (found) {
-      setViewingRecipe(found);
-      return;
-    }
-    const fallbackRecipe: Recipe = {
-      id: recipeOrItem.id || 'recipe_' + Date.now(),
-      name: recipeOrItem.name,
-      category: 'Casero',
-      prepTime: 10,
-      cookTime: 15,
-      difficulty: 'Fácil',
-      tags: ('tags' in recipeOrItem && Array.isArray(recipeOrItem.tags)) ? recipeOrItem.tags : ['Casero'],
-      ingredientsSummary: ('ingredientsSummary' in recipeOrItem && Array.isArray(recipeOrItem.ingredientsSummary)) ? recipeOrItem.ingredientsSummary : [],
-      allIngredientsFormatted: ('ingredientsSummary' in recipeOrItem && Array.isArray(recipeOrItem.ingredientsSummary) && recipeOrItem.ingredientsSummary.length > 0)
-        ? recipeOrItem.ingredientsSummary.map(name => ({ id: name.toLowerCase().replace(/\s+/g, '_'), name, amount: 'Al gusto' }))
-        : [{ id: 'ing_1', name: 'Ingredientes principales', amount: 'Al gusto' }],
-      steps: [
-        'Preparar y organizar los ingredientes en la mesa de trabajo.',
-        'Cocinar a fuego medio siguiendo la técnica recomendada.',
-        'Servir caliente y disfrutar de este riquísimo plato casero.'
-      ],
-      imageEmoji: recipeOrItem.imageEmoji || '🍳',
-      caloriesApprox: ('caloriesApprox' in recipeOrItem && typeof recipeOrItem.caloriesApprox === 'number') ? recipeOrItem.caloriesApprox : 450,
-      nutritionHighlight: 'Plato equilibrado y nutritivo.',
-      chefTip: 'Podés ajustar los condimentos a tu gusto personal.'
-    };
-    setViewingRecipe(fallbackRecipe);
-  };
-
-  // Ensure scroll is immediately reset to top on tab changes
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  }, [activeTab]);
 
   return (
     <div className={`relative ${activeTab === 'decide' ? 'h-[100dvh] max-h-[100dvh] overflow-hidden pb-0' : 'min-h-screen pb-8'} bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col selection:bg-amber-500/30 selection:text-amber-700 dark:selection:text-amber-200 transition-colors duration-200`}>
@@ -372,17 +250,6 @@ export default function App() {
         onDeleteFavorite={handleDeleteFavorite}
       />
 
-      {/* Standalone Favorites Modal */}
-      {isFavoritesOpen && activeTab !== 'favorites' && (
-        <FavoritesModal
-          isOpen={isFavoritesOpen}
-          onClose={() => setIsFavoritesOpen(false)}
-          favorites={favorites}
-          onAddFavorite={handleAddFavorite}
-          onDeleteFavorite={handleDeleteFavorite}
-        />
-      )}
-
       {/* Exclusions Modal (Fallback if opened directly) */}
       <ExclusionsModal
         isOpen={isExclusionsOpen}
@@ -403,12 +270,6 @@ export default function App() {
           setIsWelcomeOpen(false);
           setIsBlindModeOpen(true);
         }}
-      />
-
-      {/* Onboarding Interactive Guide Modal */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
       />
 
       {/* Meal Confirmed / Order Accepted Success Modal */}

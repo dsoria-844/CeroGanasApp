@@ -2,12 +2,13 @@
 
 export type Theme = 'light' | 'dark';
 
-const THEME_STORAGE_KEY = 'qcomo_theme_preference';
+const THEME_STORAGE_KEY = 'que_como_theme_v1';
+const LEGACY_THEME_STORAGE_KEY = 'qcomo_theme_preference';
 
 export function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
   
-  const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+  const saved = (localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)) as Theme | null;
   if (saved === 'light' || saved === 'dark') {
     return saved;
   }

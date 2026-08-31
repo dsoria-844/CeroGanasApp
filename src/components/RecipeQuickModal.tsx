@@ -55,7 +55,7 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
   const activeRecipe: Recipe = (recipe as any).recipe || recipe;
   const ingredients = activeRecipe.allIngredientsFormatted && activeRecipe.allIngredientsFormatted.length > 0
     ? activeRecipe.allIngredientsFormatted
-    : (activeRecipe.ingredientsSummary || []).map((name: string, i: number) => ({
+    : ((activeRecipe as any).ingredientsSummary || []).map((name: string, i: number) => ({
         id: `ing_${i}`,
         name,
         amount: 'Al gusto'

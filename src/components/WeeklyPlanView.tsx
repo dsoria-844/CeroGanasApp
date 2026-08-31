@@ -16,7 +16,7 @@ import {
   rerollSingleSlot, 
   triggerHaptic, 
   triggerVictoryConfetti,
-  getAllCatalogMeals
+  getMergedRecipes
 } from '../utils/storage';
 import { RECIPES_DATASET } from '../data/mealsData';
 import { sound } from '../utils/audio';
@@ -130,10 +130,10 @@ export const WeeklyPlanView: React.FC<WeeklyPlanViewProps> = ({
     sound.playClick(800);
     triggerHaptic('light');
     if (slot.type === 'cooking') {
-      const allCatalog = getAllCatalogMeals().filter(m => m.type === 'cooking');
-      const match = allCatalog.find(r => r.id === slot.recipeId || r.name.toLowerCase().trim() === slot.mealName.toLowerCase().trim());
-      if (match && match.recipe && onOpenRecipeModal) {
-        onOpenRecipeModal(match.recipe);
+      const allRecipes = getMergedRecipes();
+      const match = allRecipes.find(r => r.id === slot.recipeId || r.name.toLowerCase().trim() === slot.mealName.toLowerCase().trim());
+      if (match && onOpenRecipeModal) {
+        onOpenRecipeModal(match);
       } else if (onOpenRecipeModal) {
         const found = RECIPES_DATASET.find(r => r.id === slot.recipeId || r.name.toLowerCase().trim() === slot.mealName.toLowerCase().trim());
         if (found) {

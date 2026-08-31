@@ -76,19 +76,9 @@ export interface UserFavoriteMeal {
   createdAt: number;
 }
 
-export interface AppState {
-  currentMode: 'home' | 'delivery' | 'cooking';
-  pantry: string[]; // IDs of selected pantry items
-  history: MealHistoryItem[];
-  favorites: UserFavoriteMeal[];
-  excludedIngredients: string[];
-  excludedTags: string[];
-}
-
 export type AppTab = 'decide' | 'weekly' | 'pantry' | 'favorites' | 'history' | 'create_meal' | 'settings';
 export type ModalityFilter = 'all' | 'cooking' | 'delivery';
 export type FoodCategoryFilter = 'all' | 'quick' | 'meat' | 'pasta' | 'sandwiches' | 'empanadas' | 'protein' | 'desserts' | 'cheat';
-export type MoodFilter = ModalityFilter;
 
 export interface MealCardItem {
   id: string;

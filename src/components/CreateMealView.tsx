@@ -129,8 +129,8 @@ export const CreateMealView: React.FC = () => {
 
   // Build unified meal list
   const customMeals = loadCustomMeals();
-  const customDeliveryIds = new Set(customMeals.delivery.map(d => d.id));
-  const customRecipeIds = new Set(customMeals.recipes.map(r => r.id));
+  const customDeliveryIds = new Set((customMeals.customDelivery || []).map(d => d.id));
+  const customRecipeIds = new Set((customMeals.customRecipes || []).map(r => r.id));
 
   const allMeals: UnifiedMealItem[] = [
     ...catalog.recipes.map(r => ({
