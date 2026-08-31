@@ -24,6 +24,7 @@ export function useRaffle(): UseRaffleReturn {
   const prepTimerRef = useRef<NodeJS.Timeout | null>(null);
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isCancelledRef = useRef<boolean>(false);
+  const currentWinnerIdRef = useRef<string | null>(null);
 
   const clearTimers = useCallback(() => {
     isCancelledRef.current = true;
@@ -50,6 +51,12 @@ export function useRaffle(): UseRaffleReturn {
     clearTimers();
     isCancelledRef.current = false;
 
+    // Pick final winner excluding previous winner if more than 1 candidate exists
+    const previousWinnerId = currentWinnerIdRef.current;
+    const alternativePool = candidates.filter(c => c.id !== previousWinnerId);
+    const validPool = alternativePool.length > 0 ? alternativePool : candidates;
+    const finalWinner = validPool[Math.floor(Math.random() * validPool.length)];
+
     setDuelCandidateCount(candidates.length);
     setIsDuelActive(true);
     setIsPreparingRaffle(false);
@@ -57,8 +64,8 @@ export function useRaffle(): UseRaffleReturn {
     triggerHaptic('medium');
 
     let counter = 0;
-    const totalFlips = 18;
-    const intervalTime = 85;
+    const totalFlips = 16;
+    const intervalTime = 75;
 
     spinIntervalRef.current = setInterval(() => {
       if (isCancelledRef.current) {
@@ -67,19 +74,19 @@ export function useRaffle(): UseRaffleReturn {
       }
 
       counter++;
-      const pick = candidates[counter % candidates.length];
-      setDuelWinner(pick);
-      sound.playTick(600 + (counter * 20));
-      triggerHaptic('light');
-
       if (counter >= totalFlips) {
         if (spinIntervalRef.current) clearInterval(spinIntervalRef.current);
-        const finalWinner = candidates[Math.floor(Math.random() * candidates.length)];
         setDuelWinner(finalWinner);
+        currentWinnerIdRef.current = finalWinner.id;
         setIsSpinningDuel(false);
         sound.playSuccess();
         triggerHaptic('success');
         triggerVictoryConfetti();
+      } else {
+        const pick = candidates[counter % candidates.length];
+        setDuelWinner(pick);
+        sound.playTick(600 + (counter * 25));
+        triggerHaptic('light');
       }
     }, intervalTime);
   }, [clearTimers]);

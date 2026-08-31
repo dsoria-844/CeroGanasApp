@@ -1057,7 +1057,12 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
           if (onOpenRecipeModal) onOpenRecipeModal(winner);
         }}
         onOpenDelivery={(winner) => handleOpenDelivery(winner.name)}
-        onReroll={() => startRaffleImmediately(likedCards)}
+        onReroll={() => {
+          const candidatePool = likedCards.length > 1 
+            ? likedCards 
+            : cardDeck.filter(c => !rejectedCards.some(r => r.id === c.id));
+          startRaffleImmediately(candidatePool.length > 0 ? candidatePool : cardDeck);
+        }}
       />
 
       {/* NO LIKED CARDS / RAFFLE REQUIREMENT MODAL */}
