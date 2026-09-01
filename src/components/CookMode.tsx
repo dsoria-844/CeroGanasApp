@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Search,
   X,
-  Heart,
+  Star,
   Plus,
   Dices,
   Sparkles,
@@ -316,6 +316,7 @@ export const CookMode: React.FC<CookModeProps> = ({
               <input
                 type="text"
                 placeholder="Buscar ingrediente..."
+                maxLength={50}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-7 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none shadow-2xs"
@@ -379,6 +380,7 @@ export const CookMode: React.FC<CookModeProps> = ({
                     type="text"
                     value={customItemName}
                     onChange={e => setCustomItemName(e.target.value)}
+                    maxLength={30}
                     placeholder="Ej. Espinaca, Atún..."
                     autoFocus
                     className="sm:col-span-2 px-3 py-1.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
@@ -728,7 +730,7 @@ export const CookMode: React.FC<CookModeProps> = ({
                       }`}
                       title={isCurrentRecipeFavorited ? 'Quitar de favoritos' : 'Guardar en favoritos'}
                     >
-                      <Heart className={`w-4 h-4 ${isCurrentRecipeFavorited ? 'fill-current' : ''}`} />
+                      <Star className={`w-4 h-4 ${isCurrentRecipeFavorited ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>

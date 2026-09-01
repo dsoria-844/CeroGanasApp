@@ -163,6 +163,7 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
                   placeholder="Ej. Cilantro, Berenjena, Champiñones..."
                   value={customInput}
                   onChange={e => setCustomInput(e.target.value)}
+                  maxLength={30}
                   className="flex-1 px-3.5 py-2 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500"
                 />
                 <button

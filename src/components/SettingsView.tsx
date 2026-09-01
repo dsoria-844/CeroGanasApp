@@ -239,9 +239,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="number"
                     min={2}
                     max={20}
+                    maxLength={2}
                     value={duelThreshold}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      if (e.target.value.length > 2) {
+                        e.target.value = e.target.value.slice(0, 2);
+                      }
+                    }}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
+                      const val = parseInt(e.target.value.slice(0, 2), 10);
                       if (!isNaN(val)) {
                         const clamped = Math.min(20, Math.max(2, val));
                         handleSelectThreshold(clamped);
@@ -464,6 +470,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               placeholder="Ej. cilantro, berenjena, mariscos..."
               value={customInput}
               onChange={e => setCustomInput(e.target.value)}
+              maxLength={30}
               className="flex-1 px-3.5 py-2 rounded-full bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
             />
             <motion.button

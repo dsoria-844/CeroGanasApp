@@ -249,6 +249,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             placeholder="Buscar por nombre de plato..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            maxLength={50}
             className="w-full pl-10 pr-4 py-2 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 transition-all"
           />
         </div>

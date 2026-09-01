@@ -126,8 +126,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
 
             {/* Heading & Main Question */}
             <motion.div variants={modalItemVariants} className="space-y-1.5 pt-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider">
-                <Sparkles className="w-3 h-3 text-amber-500" />
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider">
                 <span>Bienvenido a Cero Ganas</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug">

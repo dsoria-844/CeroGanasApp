@@ -6,7 +6,6 @@ import {
   Sparkles, 
   ShoppingBag, 
   Calendar, 
-  Heart,
   Star, 
   Settings, 
   History, 
@@ -97,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'create_meal',
-      label: 'Modificar platos',
+      label: 'Mis platos y recetas',
       icon: <Utensils className="w-4 h-4" />,
     },
     {
@@ -113,7 +112,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'favorites',
       label: 'Mis Favoritos',
-      icon: <Heart className="w-4 h-4" />,
+      icon: <Star className="w-4 h-4" />,
       badge: favoritesCount > 0 ? favoritesCount : undefined,
     },
     {
@@ -359,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="text-[10px] text-zinc-500 dark:text-zinc-400 pt-1 border-t border-black/[0.04] dark:border-white/[0.04]">
                       <span className="text-zinc-400 text-[9px] uppercase font-semibold tracking-wider block">
-                        Desarrollador
+                        Desarrollado por
                       </span>
                       <span className="font-bold text-zinc-800 dark:text-zinc-200 text-[11px]">
                         Diego Soria

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from 'motion/react';
 import { 
   Heart, 
+  Star,
   X, 
   RotateCw, 
   ChefHat, 
@@ -19,6 +20,7 @@ import {
   ChevronRight,
   Flame,
   Utensils,
+  UtensilsCrossed,
   Layers,
   Cake,
   Clock,
@@ -66,7 +68,7 @@ interface DecideTodayViewProps {
 
 // Modalidades Dropdown Options
 const MODALITIES: { id: ModalityFilter; label: string; icon: React.ReactNode }[] = [
-  { id: 'all', label: 'Tipo', icon: <Sparkles className="w-3.5 h-3.5 text-zinc-500" /> },
+  { id: 'all', label: 'Modalidad', icon: <UtensilsCrossed className="w-3.5 h-3.5 text-zinc-500" /> },
   { id: 'cooking', label: 'Cocinar', icon: <ChefHat className="w-3.5 h-3.5 text-emerald-500" /> },
   { id: 'delivery', label: 'Delivery', icon: <Bike className="w-3.5 h-3.5 text-amber-500" /> },
 ];
@@ -448,7 +450,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                 className="absolute left-0 right-0 top-full mt-1.5 p-1.5 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-xl z-50 space-y-0.5"
               >
                 <div className="px-2.5 py-1 text-[10px] uppercase font-semibold text-zinc-400 tracking-wider">
-                  Tipo
+                  Modalidad
                 </div>
                 {MODALITIES.map(mod => {
                   const isSelected = selectedModality === mod.id;
@@ -785,7 +787,7 @@ export const DecideTodayView: React.FC<DecideTodayViewProps> = ({
                       }`}
                       title={isFavorited ? 'Quitar de favoritos' : 'Agregar a favoritos'}
                     >
-                      <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
+                      <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isFavorited ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>

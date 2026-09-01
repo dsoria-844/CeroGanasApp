@@ -169,6 +169,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
             type="text"
             value={inputText}
             onChange={e => setInputText(e.target.value)}
+            maxLength={50}
             onKeyDown={e => {
               if (e.key === 'Enter' && inputText.trim()) {
                 e.preventDefault();
