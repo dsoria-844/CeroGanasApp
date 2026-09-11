@@ -4,7 +4,8 @@ import { safeGet, safeSet, STORAGE_KEYS, generateUUID } from './persistence';
 
 export function loadFavorites(): UserFavoriteMeal[] {
   // Clean fallback: empty array by default (Fix 4.4)
-  return safeGet<UserFavoriteMeal[]>(STORAGE_KEYS.FAVORITES, []);
+  const loaded = safeGet<UserFavoriteMeal[]>(STORAGE_KEYS.FAVORITES, []);
+  return Array.isArray(loaded) ? loaded : [];
 }
 
 export function saveFavoritesToStorage(favorites: UserFavoriteMeal[]) {
@@ -239,7 +240,7 @@ export function addFavoriteMeal(meal: UserFavoriteMeal): UserFavoriteMeal[] {
 
 export function deleteFavoriteMeal(id: string): UserFavoriteMeal[] {
   const current = loadFavorites();
-  const updated = current.filter(f => f.id !== id);
+  const updated = (current || []).filter(f => f && f.id !== id);
   saveFavoritesToStorage(updated);
   return updated;
 }
@@ -250,8 +251,8 @@ export const addUserFavoriteMeal = addFavoriteMeal;
 export const deleteUserFavoriteMeal = deleteFavoriteMeal;
 
 export function isMealFavorited(name: string, favorites: UserFavoriteMeal[]): boolean {
-  const lower = name.toLowerCase().trim();
-  return favorites.some(f => f.name.toLowerCase().trim() === lower);
+  const lower = (name || '').toLowerCase().trim();
+  return (favorites || []).some(f => f && (f.name || '').toLowerCase().trim() === lower);
 }
 
 export function favoriteToDeliveryOption(fav: UserFavoriteMeal): DeliveryOption {

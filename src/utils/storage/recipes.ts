@@ -16,47 +16,67 @@ import { favoriteToDeliveryOption } from './favorites';
 import { getMergedDelivery, getMergedRecipes } from './custom-meals';
 import { getPantryItemName } from './pantry';
 
+/**
+ * Checks whether any ingredient or tag in the list matches any of the excluded items.
+ * Performs case-insensitive, whitespace-trimmed matching with O(1) Set lookups.
+ */
+export function hasExcludedItems(
+  items: (string | undefined | null)[] = [],
+  exclusions: string[] = []
+): boolean {
+  if (!items || items.length === 0 || !exclusions || exclusions.length === 0) {
+    return false;
+  }
+  const normalizedExclusions = new Set(
+    exclusions.map(e => (e || '').toLowerCase().trim()).filter(Boolean)
+  );
+  if (normalizedExclusions.size === 0) return false;
+
+  return items.some(item => {
+    if (!item) return false;
+    return normalizedExclusions.has(item.toLowerCase().trim());
+  });
+}
+
 export function getEligibleDeliveryOptions(
   category: DeliveryCategory,
-  exclusions: string[],
-  history: MealHistoryItem[],
+  exclusions: string[] = [],
+  history: MealHistoryItem[] = [],
   onlyFavorites: boolean = false,
   favoritesList: UserFavoriteMeal[] = []
 ): DeliveryOption[] {
-  const recentNames = getRecentHistoryMealNames(history);
-  const lowerExclusions = exclusions.map(e => e.toLowerCase());
+  const safeExclusions = Array.isArray(exclusions) ? exclusions : [];
+  const safeHistory = Array.isArray(history) ? history : [];
+  const safeFavorites = Array.isArray(favoritesList) ? favoritesList : [];
+
+  const recentNames = getRecentHistoryMealNames(safeHistory);
 
   let basePool: DeliveryOption[];
 
   if (onlyFavorites) {
-    basePool = favoritesList.map(favoriteToDeliveryOption);
+    basePool = safeFavorites.map(favoriteToDeliveryOption);
   } else {
-    const customFavoritesAsOptions = favoritesList
-      .filter(f => f.source === 'custom')
+    const customFavoritesAsOptions = safeFavorites
+      .filter(f => f && f.source === 'custom')
       .map(favoriteToDeliveryOption);
 
-    const existingNames = new Set(DELIVERY_DATASET.map(d => d.name.toLowerCase().trim()));
+    const existingNames = new Set((DELIVERY_DATASET || []).map(d => d.name.toLowerCase().trim()));
     const nonDuplicateCustoms = customFavoritesAsOptions.filter(
-      c => !existingNames.has(c.name.toLowerCase().trim())
+      c => c && !existingNames.has(c.name.toLowerCase().trim())
     );
 
-    basePool = [...DELIVERY_DATASET, ...nonDuplicateCustoms];
+    basePool = [...(DELIVERY_DATASET || []), ...nonDuplicateCustoms];
   }
 
-  const eligible = basePool.filter(option => {
+  const eligible = (basePool || []).filter(option => {
+    if (!option) return false;
     if (category !== 'all' && option.category !== category) {
       return false;
     }
 
-    const hasExcludedIngredient = option.ingredients.some(ing => 
-      lowerExclusions.includes(ing.toLowerCase())
-    );
-    if (hasExcludedIngredient) return false;
-
-    const hasExcludedTag = option.tags.some(tag => 
-      lowerExclusions.includes(tag.toLowerCase())
-    );
-    if (hasExcludedTag) return false;
+    if (hasExcludedItems([...(option.ingredients || []), ...(option.tags || [])], safeExclusions)) {
+      return false;
+    }
 
     const wasEatenRecently = recentNames.some(name => 
       name.includes(option.name.toLowerCase()) || option.name.toLowerCase().includes(name)
@@ -67,11 +87,10 @@ export function getEligibleDeliveryOptions(
   });
 
   if (eligible.length === 0) {
-    return basePool.filter(option => {
+    return (basePool || []).filter(option => {
+      if (!option) return false;
       if (category !== 'all' && option.category !== category) return false;
-      const hasExcluded = option.ingredients.some(ing => lowerExclusions.includes(ing.toLowerCase())) ||
-        option.tags.some(tag => lowerExclusions.includes(tag.toLowerCase()));
-      return !hasExcluded;
+      return !hasExcludedItems([...(option.ingredients || []), ...(option.tags || [])], safeExclusions);
     });
   }
 
@@ -79,36 +98,53 @@ export function getEligibleDeliveryOptions(
 }
 
 export function matchRecipesWithPantry(
-  pantry: string[],
-  exclusions: string[],
-  history: MealHistoryItem[]
+  pantry: string[] = [],
+  exclusions: string[] = [],
+  history: MealHistoryItem[] = []
 ): MatchResult[] {
-  const lowerExclusions = exclusions.map(e => e.toLowerCase());
-  const recentNames = getRecentHistoryMealNames(history);
+  const safePantry = Array.isArray(pantry) ? pantry : [];
+  const safeExclusions = Array.isArray(exclusions) ? exclusions : [];
+  const safeHistory = Array.isArray(history) ? history : [];
+
+  if (safePantry.length === 0) {
+    return [];
+  }
+
+  const lowerExclusions = safeExclusions.map(e => (e || '').toLowerCase());
+  const recentNames = getRecentHistoryMealNames(safeHistory);
 
   const results: MatchResult[] = [];
 
-  for (const recipe of RECIPES_DATASET) {
-    const hasExcluded = recipe.requiredIngredients.some(ing => lowerExclusions.includes(ing.toLowerCase())) ||
-      recipe.tags.some(tag => lowerExclusions.includes(tag.toLowerCase()));
-    
-    if (hasExcluded) continue;
+  for (const recipe of (RECIPES_DATASET || [])) {
+    const reqIngredients = recipe.requiredIngredients || [];
+    const optIngredients = recipe.optionalIngredients || [];
+    const tags = recipe.tags || [];
 
-    const requiredTotal = recipe.requiredIngredients.length;
-    const requiredMatched = recipe.requiredIngredients.filter(id => pantry.includes(id));
-    const missingRequired = recipe.requiredIngredients.filter(id => !pantry.includes(id));
+    if (hasExcludedItems([...reqIngredients, ...tags], safeExclusions)) continue;
 
-    const optionalMatched = recipe.optionalIngredients.filter(id => pantry.includes(id));
-    const optionalTotal = recipe.optionalIngredients.length;
-    const optionalRatio = optionalTotal > 0 ? optionalMatched.length / optionalTotal : 1;
+    const requiredTotal = reqIngredients.length;
+    const requiredMatched = reqIngredients.filter(id => safePantry.includes(id));
+    const missingRequired = reqIngredients.filter(id => !safePantry.includes(id));
+
+    const optionalMatched = optIngredients.filter(id => safePantry.includes(id));
+    const optionalTotal = optIngredients.length;
+    const optionalRatio = optionalTotal > 0 ? optionalMatched.length / optionalTotal : 0;
 
     let matchPercentage: number;
-    if (requiredTotal === 0 || missingRequired.length === 0) {
-      matchPercentage = 100;
+    if (requiredTotal === 0) {
+      matchPercentage = optionalTotal > 0 ? Math.round(optionalRatio * 100) : 0;
+    } else if (requiredMatched.length === 0) {
+      matchPercentage = 0;
+    } else if (missingRequired.length === 0) {
+      matchPercentage = optionalTotal > 0 
+        ? Math.round(80 + (optionalRatio * 20))
+        : 100;
     } else {
       const requiredRatio = requiredMatched.length / requiredTotal;
       matchPercentage = Math.min(95, Math.round((requiredRatio * 80) + (optionalRatio * 20)));
     }
+
+    if (matchPercentage <= 0) continue;
 
     const allMatched = [...requiredMatched, ...optionalMatched];
     const missing = missingRequired;
@@ -146,19 +182,20 @@ export function getUnifiedCardDataset(
   history: MealHistoryItem[] = [],
   favorites: UserFavoriteMeal[] = []
 ): MealCardItem[] {
+  const safeExclusions = Array.isArray(exclusions) ? exclusions : [];
+  const safeFavorites = Array.isArray(favorites) ? favorites : [];
+
   const allDelivery = getMergedDelivery();
   const allRecipes = getMergedRecipes();
 
-  const filteredDelivery = allDelivery.filter(d => {
-    const hasExcluded = d.ingredients.some(ing => exclusions.includes(ing.toLowerCase().trim()));
-    if (hasExcluded) return false;
-    return true;
+  const filteredDelivery = (allDelivery || []).filter(d => {
+    if (!d) return false;
+    return !hasExcludedItems([...(d.ingredients || []), ...(d.tags || [])], safeExclusions);
   });
 
-  const filteredRecipes = allRecipes.filter(recipe => {
-    const hasExcluded = recipe.requiredIngredients.some(id => exclusions.includes(id.toLowerCase().trim()));
-    if (hasExcluded) return false;
-    return true;
+  const filteredRecipes = (allRecipes || []).filter(recipe => {
+    if (!recipe) return false;
+    return !hasExcludedItems([...(recipe.requiredIngredients || []), ...(recipe.tags || [])], safeExclusions);
   });
 
   const cards: MealCardItem[] = [];
@@ -251,18 +288,15 @@ export function getUnifiedCardDataset(
   }
 
   // 3. User Favorites
-  const lowerExclusions = exclusions.map(e => e.toLowerCase());
-  favorites.forEach(f => {
+  (safeFavorites || []).forEach(f => {
+    if (!f) return;
     const isFavCooking = f.source === 'cooking';
     if (
       (modality === 'all') ||
       (modality === 'cooking' && isFavCooking) ||
       (modality === 'delivery' && !isFavCooking)
     ) {
-      const hasExcluded = f.ingredients.some(ing => 
-        lowerExclusions.includes(ing.toLowerCase())
-      );
-      if (hasExcluded) return;
+      if (hasExcludedItems([...(f.ingredients || []), ...(f.tags || [])], safeExclusions)) return;
 
       cards.push({
         id: f.id,
@@ -270,9 +304,9 @@ export function getUnifiedCardDataset(
         type: isFavCooking ? 'cooking' : 'delivery',
         categoryLabel: '⭐ Tu Favorito Personal',
         timeEstimate: f.deliveryTime || '20-30 min',
-        tags: ['Favorito', ...f.tags],
+        tags: ['Favorito', ...(f.tags || [])],
         description: f.description || 'Guardado en tu lista personal de favoritos.',
-        ingredientsSummary: f.ingredients.map(getPantryItemName),
+        ingredientsSummary: (f.ingredients || []).map(getPantryItemName),
         imageEmoji: f.imageEmoji,
         caloriesApprox: f.caloriesApprox,
         vibe: f.vibe || 'Uno de tus platos predilectos.',
@@ -284,22 +318,28 @@ export function getUnifiedCardDataset(
 }
 
 export function pickBlindDecisionMeal(
-  exclusions: string[],
-  history: MealHistoryItem[],
-  favorites: UserFavoriteMeal[]
+  exclusions: string[] = [],
+  history: MealHistoryItem[] = [],
+  favorites: UserFavoriteMeal[] = []
 ): MealCardItem {
+  const safeExclusions = Array.isArray(exclusions) ? exclusions : [];
+  const safeHistory = Array.isArray(history) ? history : [];
+  const safeFavorites = Array.isArray(favorites) ? favorites : [];
+
   const prefModality = loadPreferredModality();
-  let allCards = getUnifiedCardDataset(prefModality, 'all', exclusions, history, favorites);
+  let allCards = getUnifiedCardDataset(prefModality, 'all', safeExclusions, safeHistory, safeFavorites);
   if (allCards.length === 0) {
-    allCards = getUnifiedCardDataset('all', 'all', exclusions, history, favorites);
+    allCards = getUnifiedCardDataset('all', 'all', safeExclusions, safeHistory, safeFavorites);
   }
-  const savoryCards = allCards.filter(card => {
-    const isDessert = card.tags.some(t => /postre|golosina|helado|torta|dulce|alfajor|flan|panqueque|chocotorta/i.test(t)) ||
+  const savoryCards = (allCards || []).filter(card => {
+    if (!card) return false;
+    const tags = card.tags || [];
+    const isDessert = tags.some(t => /postre|golosina|helado|torta|dulce|alfajor|flan|panqueque|chocotorta/i.test(t)) ||
       (card.categoryLabel && /postre|dulce/i.test(card.categoryLabel));
     return !isDessert;
   });
 
-  const pool = savoryCards.length > 0 ? savoryCards : allCards;
+  const pool = savoryCards.length > 0 ? savoryCards : (allCards || []);
 
   if (pool.length === 0) {
     return {

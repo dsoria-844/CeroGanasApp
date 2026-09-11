@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Clock, CheckCircle2, Star, Lightbulb, Utensils, Sparkles } from 'lucide-react';
 import { Recipe, UserFavoriteMeal } from '../types';
@@ -20,23 +20,22 @@ const recipeContentVariants = {
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.04,
+      staggerChildren: 0.05,
       delayChildren: 0.04,
     },
   },
 };
 
 const recipeItemVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.98 },
-  show: {
-    opacity: 1,
+  hidden: { opacity: 0, y: 10 },
+  show: { 
+    opacity: 1, 
     y: 0,
-    scale: 1,
     transition: {
       type: 'spring',
-      stiffness: 400,
+      stiffness: 450,
       damping: 28,
-    },
+    }
   },
 };
 
@@ -44,15 +43,54 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
   recipe,
   isOpen,
   onClose,
+  favorites = [],
   onAcceptMeal,
-  favorites,
   onAddFavorite,
   onDeleteFavorite,
 }) => {
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !recipe) return null;
 
   // Defensive unwrapping in case a card or nested recipe was passed
   const activeRecipe: Recipe = (recipe as any).recipe || recipe;
+
+  // Controlled fallback if recipe or dish name is missing
+  if (!activeRecipe || !activeRecipe.name || activeRecipe.name.trim() === '') {
+    return (
+      <AnimatePresence>
+        <div 
+          role="dialog"
+          aria-modal="true"
+          onClick={onClose}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] p-6 text-center space-y-3 shadow-2xl"
+          >
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Este plato ya no está disponible</h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">El plato or receta seleccionada no se encuentra en el catálogo actual.</p>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 px-4 rounded-xl bg-amber-500 text-zinc-950 font-bold text-sm cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </AnimatePresence>
+    );
+  }
+
   const ingredients = activeRecipe.allIngredientsFormatted && activeRecipe.allIngredientsFormatted.length > 0
     ? activeRecipe.allIngredientsFormatted
     : ((activeRecipe as any).ingredientsSummary || []).map((name: string, i: number) => ({
@@ -61,13 +99,9 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
         amount: 'Al gusto'
       }));
 
-  const steps = activeRecipe.steps && activeRecipe.steps.length > 0
+  const steps = activeRecipe.steps && Array.isArray(activeRecipe.steps)
     ? activeRecipe.steps
-    : [
-        'Preparar y organizar los ingredientes en la mesa de trabajo.',
-        'Cocinar a fuego medio siguiendo la técnica recomendada.',
-        'Servir caliente y disfrutar de este riquísimo plato casero.'
-      ];
+    : [];
 
   const totalTime = (activeRecipe.prepTime || 10) + (activeRecipe.cookTime || 15);
 
@@ -111,6 +145,9 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none"
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="recipe-modal-title"
           initial={{ opacity: 0, scale: 0.92, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 15 }}
@@ -125,7 +162,7 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
               onClose();
             }}
             className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors cursor-pointer shadow-2xs z-10"
-            title="Cerrar receta"
+            aria-label="Cerrar receta"
           >
             <X className="w-4 h-4" />
           </motion.button>
@@ -154,7 +191,7 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
                     {activeRecipe.difficulty || 'Fácil'}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+                <h3 id="recipe-modal-title" className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
                   {activeRecipe.name}
                 </h3>
               </div>
@@ -187,26 +224,32 @@ export const RecipeQuickModal: React.FC<RecipeQuickModalProps> = ({
               </motion.div>
             )}
 
-            {/* 3 Steps instructions */}
+            {/* Steps instructions */}
             <motion.div variants={recipeItemVariants} className="space-y-2.5 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
               <h4 className="text-xs uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Preparación en 3 Pasos Rápidos</span>
+                <span>{steps.length > 0 ? `Preparación en ${steps.length} ${steps.length === 1 ? 'Paso' : 'Pasos'}` : 'Preparación'}</span>
               </h4>
-              <div className="space-y-2">
-                {steps.map((step: string, idx: number) => (
-                  <motion.div
-                    key={idx}
-                    whileHover={{ scale: 1.01 }}
-                    className="flex items-start gap-2.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed shadow-2xs transition-colors"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-                      {idx + 1}
-                    </div>
-                    <p className="font-normal">{step}</p>
-                  </motion.div>
-                ))}
-              </div>
+              {steps.length > 0 ? (
+                <div className="space-y-2">
+                  {steps.map((step: string, idx: number) => (
+                    <motion.div
+                      key={idx}
+                      whileHover={{ scale: 1.01 }}
+                      className="flex items-start gap-2.5 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed shadow-2xs transition-colors"
+                    >
+                      <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <p className="font-normal">{step}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-black/[0.04] dark:border-white/[0.06] text-xs text-zinc-500 dark:text-zinc-400">
+                  Este plato no cuenta con una receta paso a paso estructurada en el catálogo.
+                </div>
+              )}
             </motion.div>
 
             {/* Chef Tip */}

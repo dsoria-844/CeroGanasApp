@@ -65,6 +65,16 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
     };
   }, []);
 
+  // Keyboard Escape listener when modal is not embedded
+  useEffect(() => {
+    if (!isOpen || isEmbedded) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isEmbedded, onClose]);
+
   // All pre-loaded catalog meals
   const catalog = useMemo(() => getAllPreloadedMeals(), []);
 
@@ -567,8 +577,19 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none">
+    <div 
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          sound.playClick(600);
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-md select-none"
+    >
       <motion.div 
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="favorites-modal-title"
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -583,7 +604,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
               <Star className="w-4 h-4 fill-amber-400" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              <h3 id="favorites-modal-title" className="text-lg font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 Mis Platos Favoritos
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">
@@ -599,6 +620,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
               onClose();
             }}
             className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors btn-press cursor-pointer"
+            aria-label="Cerrar favoritos"
           >
             <X className="w-4 h-4" />
           </button>

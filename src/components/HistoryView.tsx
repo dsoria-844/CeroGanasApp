@@ -10,7 +10,10 @@ import {
   Search, 
   Check, 
   TrendingUp,
-  RotateCcw
+  RotateCcw,
+  ArrowLeft,
+  CalendarPlus,
+  Info
 } from 'lucide-react';
 import { MealHistoryItem } from '../types';
 import { sound } from '../utils/audio';
@@ -21,6 +24,9 @@ interface HistoryViewProps {
   onDeleteHistoryItem: (id: string) => void;
   onClearHistory: () => void;
   onRestoreHistoryItem?: (item: MealHistoryItem) => void;
+  onNavigateDecide?: () => void;
+  onOpenRecipeModal?: (item: MealHistoryItem) => void;
+  onAddToPlan?: (item: MealHistoryItem) => void;
 }
 
 type TimeFilter = 'all' | 'today' | 'week' | 'month';
@@ -55,6 +61,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   onDeleteHistoryItem,
   onClearHistory,
   onRestoreHistoryItem,
+  onNavigateDecide,
+  onOpenRecipeModal,
+  onAddToPlan,
 }) => {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [modalityFilter, setModalityFilter] = useState<ModalityFilter>('all');
@@ -140,16 +149,30 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6 pb-24 select-none">
-      {/* View Header */}
+      {/* View Header with optional Back button */}
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
-            <History className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
-            <span>Historial de Comidas</span>
-          </h2>
-          <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
-            Todo lo que comiste, en un solo lugar
-          </p>
+        <div className="flex items-center gap-3">
+          {onNavigateDecide && (
+            <button
+              onClick={() => {
+                sound.playClick(700);
+                onNavigateDecide();
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-900 border border-black/[0.08] dark:border-white/[0.08] shadow-xs cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Volver</span>
+            </button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
+              <History className="w-6 h-6 text-zinc-700 dark:text-zinc-300" />
+              <span>Historial de Comidas</span>
+            </h2>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
+              Todo lo que comiste, en un solo lugar
+            </p>
+          </div>
         </div>
 
         {history.length > 0 && (
@@ -347,16 +370,40 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
       {/* Traceability Timeline List with FLIP & Staggered Animations */}
       <div className="space-y-3">
-        {filteredHistory.length === 0 ? (
+        {history.length === 0 ? (
+          <div className="apple-card p-10 sm:p-12 text-center space-y-4 text-zinc-400">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl">
+              🍽️
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-bold text-zinc-800 dark:text-zinc-100">
+                Todavía no decidiste qué comer
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+                Elegí tus candidatos en la pantalla principal y sortea tu plato para empezar a registrar tu historial.
+              </p>
+            </div>
+            {onNavigateDecide && (
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={() => {
+                  sound.playClick(850);
+                  onNavigateDecide();
+                }}
+                className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs inline-flex items-center gap-2 shadow-md shadow-amber-500/25 cursor-pointer transition-colors"
+              >
+                <span>Elegir entre 20 platos</span>
+              </motion.button>
+            )}
+          </div>
+        ) : filteredHistory.length === 0 ? (
           <div className="apple-card p-10 text-center space-y-2 text-zinc-400">
             <History className="w-8 h-8 mx-auto stroke-1" />
             <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-              No hay registros en el historial
+              No hay coincidencias en el historial
             </p>
             <p className="text-xs">
-              {history.length > 0
-                ? 'Ninguna comida coincide con los filtros seleccionados.'
-                : 'Elegí comidas en la pantalla principal para empezar a registrar.'}
+              Ninguna comida coincide con los filtros seleccionados.
             </p>
           </div>
         ) : (
@@ -390,20 +437,29 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     exit={{ opacity: 0, scale: 0.9, y: -8 }}
                     transition={{ type: 'spring', stiffness: 420, damping: 28 }}
                     whileHover={{ y: -1.5 }}
-                    className="apple-card p-4 sm:p-5 flex items-center justify-between gap-4 shadow-2xs hover:shadow-md transition-shadow"
+                    className="apple-card p-4 sm:p-5 flex items-center justify-between gap-3 shadow-2xs hover:shadow-md transition-shadow"
                   >
                     {/* Visual Icon & Meal details */}
-                    <div className="flex items-center gap-3.5">
+                    <div 
+                      className={`flex items-center gap-3.5 flex-1 min-w-0 ${onOpenRecipeModal ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                      onClick={() => {
+                        if (onOpenRecipeModal) {
+                          sound.playClick(750);
+                          onOpenRecipeModal(item);
+                        }
+                      }}
+                      title={onOpenRecipeModal ? 'Ver detalles o receta' : undefined}
+                    >
                       <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800/80 border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-center text-2xl shadow-xs shrink-0 select-none">
                         {item.emoji || (item.type === 'cooking' ? '🍳' : '🛵')}
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-50">
+                          <h4 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
                             {item.name}
                           </h4>
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                             item.type === 'cooking'
                               ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
                               : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/20'
@@ -430,15 +486,45 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Delete Button */}
-                    <motion.button
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => handleDeleteItem(item)}
-                      className="p-2 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer shrink-0"
-                      title="Eliminar este registro"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </motion.button>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {onOpenRecipeModal && (
+                        <motion.button
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => {
+                            sound.playClick(750);
+                            onOpenRecipeModal(item);
+                          }}
+                          className="p-2 rounded-xl text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          title="Ver detalles o receta"
+                        >
+                          <Info className="w-4 h-4" />
+                        </motion.button>
+                      )}
+
+                      {onAddToPlan && (
+                        <motion.button
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => {
+                            sound.playClick(750);
+                            onAddToPlan(item);
+                          }}
+                          className="p-2 rounded-xl text-zinc-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors cursor-pointer"
+                          title="Agregar al plan semanal"
+                        >
+                          <CalendarPlus className="w-4 h-4" />
+                        </motion.button>
+                      )}
+
+                      <motion.button
+                        whileTap={{ scale: 0.85 }}
+                        onClick={() => handleDeleteItem(item)}
+                        className="p-2 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                        title="Eliminar este registro"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </motion.button>
+                    </div>
                   </motion.div>
                 );
               })}

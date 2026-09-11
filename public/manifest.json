@@ -6,10 +6,18 @@
     {
       "src": "./cero-ganas-logo.jpg",
       "sizes": "192x192 512x512 1024x1024",
-      "type": "image/jpeg"
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "./cero-ganas-logo.jpg",
+      "sizes": "192x192 512x512 1024x1024",
+      "type": "image/jpeg",
+      "purpose": "maskable"
     }
   ],
   "start_url": "./",
+  "scope": "./",
   "background_color": "#09090b",
   "theme_color": "#09090b",
   "display": "standalone",
