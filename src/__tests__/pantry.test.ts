@@ -49,4 +49,13 @@ describe('Pantry and Recipe Matching', () => {
       expect(results[0].recipe).toBeDefined();
     }
   });
+
+  it('correctly filters out items matching exclusions via hasExcludedItems', async () => {
+    const { hasExcludedItems } = await import('../utils/storage/recipes');
+    expect(hasExcludedItems(['cebolla', 'carne'], ['Cebolla'])).toBe(true);
+    expect(hasExcludedItems(['tomate', 'lechuga'], ['cebolla', 'ajo'])).toBe(false);
+    expect(hasExcludedItems([], ['cebolla'])).toBe(false);
+    expect(hasExcludedItems(['cebolla'], [])).toBe(false);
+    expect(hasExcludedItems(['  carne picada  '], ['carne picada'])).toBe(true);
+  });
 });

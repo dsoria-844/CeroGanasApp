@@ -2,6 +2,7 @@ import { DayPlan, DeliveryOption, MealHistoryItem, MealPlanSlot, Recipe, WeeklyP
 import { DELIVERY_DATASET, RECIPES_DATASET } from '../../data/mealsData';
 import { safeGet, safeSet, STORAGE_KEYS, generateUUID } from './persistence';
 import { getRecentHistoryMealNames } from './history';
+import { hasExcludedItems } from './recipes';
 
 export const DAYS_OF_WEEK: { id: DayPlan['dayId']; name: string }[] = [
   { id: 'lunes', name: 'Lunes' },
@@ -150,18 +151,12 @@ export function generateFullWeeklyPlan(
 
   const availableRecipes = RECIPES_DATASET.filter(r => {
     if (!r) return false;
-    const req = r.requiredIngredients || [];
-    const tags = r.tags || [];
-    return !req.some(i => safeExclusions.includes((i || '').toLowerCase().trim())) &&
-           !tags.some(t => safeExclusions.includes((t || '').toLowerCase().trim()));
+    return !hasExcludedItems([...(r.requiredIngredients || []), ...(r.tags || [])], safeExclusions);
   });
 
   const availableDelivery = DELIVERY_DATASET.filter(d => {
     if (!d) return false;
-    const ings = d.ingredients || [];
-    const tags = d.tags || [];
-    return !ings.some(i => safeExclusions.includes((i || '').toLowerCase().trim())) &&
-           !tags.some(t => safeExclusions.includes((t || '').toLowerCase().trim()));
+    return !hasExcludedItems([...(d.ingredients || []), ...(d.tags || [])], safeExclusions);
   });
 
   // Prefer items not recently eaten if possible
@@ -243,20 +238,14 @@ export function rerollSingleSlot(
 
   const availableRecipes = RECIPES_DATASET.filter(r => {
     if (!r) return false;
-    const req = r.requiredIngredients || [];
-    const tags = r.tags || [];
-    const hasExcluded = req.some(i => safeExclusions.includes((i || '').toLowerCase().trim())) ||
-      tags.some(t => safeExclusions.includes((t || '').toLowerCase().trim()));
-    return !hasExcluded && (r.name || '').toLowerCase().trim() !== currLower;
+    const isExcluded = hasExcludedItems([...(r.requiredIngredients || []), ...(r.tags || [])], safeExclusions);
+    return !isExcluded && (r.name || '').toLowerCase().trim() !== currLower;
   });
 
   const availableDelivery = DELIVERY_DATASET.filter(d => {
     if (!d) return false;
-    const ings = d.ingredients || [];
-    const tags = d.tags || [];
-    const hasExcluded = ings.some(i => safeExclusions.includes((i || '').toLowerCase().trim())) ||
-      tags.some(t => safeExclusions.includes((t || '').toLowerCase().trim()));
-    return !hasExcluded && (d.name || '').toLowerCase().trim() !== currLower;
+    const isExcluded = hasExcludedItems([...(d.ingredients || []), ...(d.tags || [])], safeExclusions);
+    return !isExcluded && (d.name || '').toLowerCase().trim() !== currLower;
   });
 
   if (type === 'cooking' || (type === 'any' && Math.random() > 0.4)) {
@@ -265,7 +254,7 @@ export function rerollSingleSlot(
       return createSlotFromRecipe(randomR);
     }
     const nonExcludedRecipes = RECIPES_DATASET.filter(r => 
-      !(r.requiredIngredients || []).some(i => safeExclusions.includes((i || '').toLowerCase().trim()))
+      !hasExcludedItems(r.requiredIngredients, safeExclusions)
     );
     if (nonExcludedRecipes.length > 0) {
       return createSlotFromRecipe(nonExcludedRecipes[0]);
@@ -280,7 +269,7 @@ export function rerollSingleSlot(
       return createSlotFromDelivery(randomD);
     }
     const nonExcludedDelivery = DELIVERY_DATASET.filter(d => 
-      !(d.ingredients || []).some(i => safeExclusions.includes((i || '').toLowerCase().trim()))
+      !hasExcludedItems(d.ingredients, safeExclusions)
     );
     if (nonExcludedDelivery.length > 0) {
       return createSlotFromDelivery(nonExcludedDelivery[0]);
