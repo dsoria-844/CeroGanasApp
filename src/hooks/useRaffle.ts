@@ -2,6 +2,12 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { MealCardItem } from '../types';
 import { sound } from '../utils/audio';
 import { triggerHaptic, triggerVictoryConfetti } from '../utils/storage';
+import { 
+  computeReelSequence, 
+  getEligibleRaffleCandidates, 
+  RAFFLE_DELAYS, 
+  selectRaffleWinner 
+} from '../utils/raffleEngine';
 
 export type RaffleState = 'IDLE' | 'DRAWING' | 'WINNER';
 
@@ -89,14 +95,10 @@ export function useRaffle(): UseRaffleReturn {
     finalWinner: MealCardItem,
     targetRoundId: number
   ) => {
-    // 12-step deceleration curve: 50ms up to 560ms (~2.19s total duration within 1.5-2.5s spec)
-    const delays = [50, 50, 50, 60, 75, 95, 125, 170, 230, 310, 420, 560];
-    const totalSteps = delays.length;
-
-    // Mathematically offset sequence so step (totalSteps - 1) lands exactly on finalWinner
     const winnerIdx = poolForAnimation.findIndex(c => c.id === finalWinner.id);
     const targetWinnerIdx = winnerIdx >= 0 ? winnerIdx : 0;
-    const offset = (targetWinnerIdx - (totalSteps - 1)) % poolForAnimation.length;
+    const sequence = computeReelSequence(poolForAnimation.length, targetWinnerIdx, RAFFLE_DELAYS.length);
+    const totalSteps = sequence.length;
 
     let step = 0;
 
@@ -135,7 +137,7 @@ export function useRaffle(): UseRaffleReturn {
         return;
       }
 
-      const candidateIdx = (((step + offset) % poolForAnimation.length) + poolForAnimation.length) % poolForAnimation.length;
+      const candidateIdx = sequence[step];
       const pick = poolForAnimation[candidateIdx];
       setActiveCandidate(pick);
       setActiveCandidateIndex(candidateIdx);
@@ -144,7 +146,7 @@ export function useRaffle(): UseRaffleReturn {
       sound.playTick(580 + (step * 24));
       triggerHaptic('light');
 
-      const currentDelay = delays[step];
+      const currentDelay = RAFFLE_DELAYS[step];
       step++;
       timeoutRef.current = setTimeout(runStep, currentDelay);
     };
@@ -173,11 +175,9 @@ export function useRaffle(): UseRaffleReturn {
     // 1st draw: all candidates are eligible
     const eligible = list;
 
-    // Pick final winner upfront using EXACT existing draw algorithm
-    const previousWinnerId = currentWinnerIdRef.current;
-    const alternativePool = eligible.filter(c => c && c.id !== previousWinnerId);
-    const validPool = alternativePool.length > 0 ? alternativePool : eligible;
-    const finalWinner = validPool[Math.floor(Math.random() * validPool.length)];
+    // Pick final winner upfront using pure selection engine
+    const finalWinner = selectRaffleWinner(eligible, currentWinnerIdRef.current);
+    if (!finalWinner) return;
 
     setDrawingCandidates(eligible);
     setDuelCandidateCount(list.length);
@@ -199,7 +199,7 @@ export function useRaffle(): UseRaffleReturn {
     if (roundList.length === 0) return false;
 
     // Eligible candidates = round candidates whose id is NOT in shownWinnerIds
-    const eligible = roundList.filter(c => c && !shownWinnerIdsRef.current.includes(c.id));
+    const eligible = getEligibleRaffleCandidates(roundList, shownWinnerIdsRef.current);
     if (eligible.length === 0) return false;
 
     const currentRoundId = roundIdRef.current;
@@ -207,8 +207,9 @@ export function useRaffle(): UseRaffleReturn {
     isCancelledRef.current = false;
     isSpinningRef.current = true;
 
-    // Pick new winner randomly from eligible candidates using existing algorithm
-    const finalWinner = eligible[Math.floor(Math.random() * eligible.length)];
+    // Pick new winner randomly from eligible candidates using pure selection engine
+    const finalWinner = selectRaffleWinner(eligible);
+    if (!finalWinner) return false;
 
     setDrawingCandidates(eligible);
     setDuelWinner(null); // Return to DRAWING cleanly
@@ -253,9 +254,7 @@ export function useRaffle(): UseRaffleReturn {
         : 'IDLE';
 
   // Derived state: Single Source of Truth for remaining eligible candidates
-  const eligibleCandidates = roundCandidates.filter(
-    c => c && !shownWinnerIds.includes(c.id)
-  );
+  const eligibleCandidates = getEligibleRaffleCandidates(roundCandidates, shownWinnerIds);
   const remainingCount = eligibleCandidates.length;
   const canReroll = remainingCount > 0;
 

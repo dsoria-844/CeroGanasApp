@@ -30,4 +30,31 @@ describe('Raffle Candidate & Selection Constraints', () => {
     expect(eligibleForReroll).toHaveLength(4);
     expect(eligibleForReroll.some(c => c.id === firstWinnerId)).toBe(false);
   });
+
+  it('computes reel sequence that always lands precisely on winner index', async () => {
+    const { computeReelSequence } = await import('../utils/raffleEngine');
+    const poolSize = 5;
+    const totalSteps = 12;
+
+    for (let targetWinnerIdx = 0; targetWinnerIdx < poolSize; targetWinnerIdx++) {
+      const sequence = computeReelSequence(poolSize, targetWinnerIdx, totalSteps);
+      expect(sequence).toHaveLength(totalSteps);
+      expect(sequence[totalSteps - 1]).toBe(targetWinnerIdx);
+    }
+  });
+
+  it('selects a valid winner and avoids previous winner when alternatives exist', async () => {
+    const { selectRaffleWinner } = await import('../utils/raffleEngine');
+    const winner = selectRaffleWinner(sampleCandidates, 'c1');
+    expect(winner).toBeDefined();
+    expect(sampleCandidates.some(c => c.id === winner?.id)).toBe(true);
+    expect(winner?.id).not.toBe('c1');
+  });
+
+  it('returns remaining candidates correctly using getEligibleRaffleCandidates', async () => {
+    const { getEligibleRaffleCandidates } = await import('../utils/raffleEngine');
+    const eligible = getEligibleRaffleCandidates(sampleCandidates, ['c1', 'c3']);
+    expect(eligible).toHaveLength(3);
+    expect(eligible.map(c => c.id)).toEqual(['c2', 'c4', 'c5']);
+  });
 });
