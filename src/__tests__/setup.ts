@@ -6,7 +6,7 @@ vi.mock('canvas-confetti', () => ({
 }));
 
 // Mock AudioContext and sound effects
-global.AudioContext = vi.fn().mockImplementation(() => ({
+(globalThis as any).AudioContext = vi.fn().mockImplementation(() => ({
   createOscillator: vi.fn().mockReturnValue({
     connect: vi.fn(),
     start: vi.fn(),
