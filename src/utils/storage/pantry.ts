@@ -16,7 +16,9 @@ export function getPantryCache(): Map<string, PantryItem> {
 }
 
 export function loadSavedPantry(): string[] {
-  return safeGet<string[]>(STORAGE_KEYS.PANTRY, ['huevos', 'arroz', 'cebolla', 'aceite']);
+  const loaded = safeGet<string[]>(STORAGE_KEYS.PANTRY, ['huevos', 'arroz', 'cebolla', 'aceite']);
+  const safeArray = Array.isArray(loaded) ? loaded : ['huevos', 'arroz', 'cebolla', 'aceite'];
+  return Array.from(new Set(safeArray.filter(Boolean)));
 }
 
 export function savePantryToStorage(pantryIds: string[]) {
@@ -24,7 +26,8 @@ export function savePantryToStorage(pantryIds: string[]) {
 }
 
 export function loadCustomPantryItems(): PantryItem[] {
-  return safeGet<PantryItem[]>(STORAGE_KEYS.CUSTOM_PANTRY, []);
+  const loaded = safeGet<PantryItem[]>(STORAGE_KEYS.CUSTOM_PANTRY, []);
+  return Array.isArray(loaded) ? loaded : [];
 }
 
 export function saveCustomPantryItems(items: PantryItem[]) {
@@ -114,14 +117,30 @@ export function addCustomPantryItem(name: string, forcedCategory?: PantryCategor
 
 export function deleteCustomPantryItem(id: string): PantryItem[] {
   const customItems = loadCustomPantryItems();
-  const updated = customItems.filter(item => item.id !== id);
+  const updated = (customItems || []).filter(item => item && item.id !== id);
   saveCustomPantryItems(updated);
+
+  // Clean up from saved active pantry list if present
+  const savedPantry = loadSavedPantry();
+  if (savedPantry.includes(id)) {
+    savePantryToStorage(savedPantry.filter(itemId => itemId !== id));
+  }
+
   return getAllPantryItems();
 }
 
 export function getAllPantryItems(): PantryItem[] {
   const customItems = loadCustomPantryItems();
-  return [...customItems, ...PANTRY_ITEMS];
+  const combined = [...(customItems || []), ...(PANTRY_ITEMS || [])];
+  const seenIds = new Set<string>();
+  const deduplicated: PantryItem[] = [];
+  for (const item of combined) {
+    if (item && item.id && !seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      deduplicated.push(item);
+    }
+  }
+  return deduplicated;
 }
 
 export function getPantryItemName(id: string): string {

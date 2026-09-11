@@ -36,9 +36,14 @@ export class ErrorBoundary extends Component<Props, State> {
             🦥
           </div>
           <h2 className="text-xl font-bold tracking-tight mb-2">Algo no salió como esperábamos</h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mb-6 leading-relaxed">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md mb-4 leading-relaxed">
             {this.state.error?.message || 'Ocurrió un error inesperado al renderizar la aplicación.'}
           </p>
+          {this.state.error?.stack && (
+            <pre className="text-[10px] text-left max-w-lg max-h-40 overflow-auto p-3 mb-6 bg-zinc-900 text-zinc-300 rounded-lg font-mono border border-zinc-700/50">
+              {this.state.error.stack}
+            </pre>
+          )}
           <button
             onClick={() => window.location.reload()}
             className="px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold shadow-md shadow-amber-500/20 cursor-pointer transition-transform active:scale-95"

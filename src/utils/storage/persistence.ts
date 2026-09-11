@@ -19,8 +19,31 @@ export const STORAGE_KEYS = {
 export function safeGet<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as T;
+    let raw = localStorage.getItem(key);
+    // Backward compatibility: If versioned key not found, check legacy unversioned key
+    if ((raw === null || raw === undefined || raw === 'undefined') && key.includes('_v1')) {
+      const legacyKey = key.replace('_v1', '');
+      const legacyRaw = localStorage.getItem(legacyKey);
+      if (legacyRaw !== null && legacyRaw !== undefined && legacyRaw !== 'undefined') {
+        raw = legacyRaw;
+        try {
+          localStorage.setItem(key, legacyRaw);
+        } catch {
+          // Ignore write error
+        }
+      }
+    }
+
+    if (raw !== null && raw !== undefined && raw !== 'undefined') {
+      const parsed = JSON.parse(raw);
+      if (parsed !== null && parsed !== undefined) {
+        // If expected fallback is an array, ensure parsed is also an array
+        if (Array.isArray(fallback) && !Array.isArray(parsed)) {
+          return fallback;
+        }
+        return parsed as T;
+      }
+    }
   } catch (e) {
     console.error(`[Storage] Error reading ${key}:`, e);
   }
@@ -128,7 +151,8 @@ export function savePreferredModality(modality: ModalityFilter): void {
 }
 
 export function loadExclusions(): string[] {
-  return safeGet<string[]>(STORAGE_KEYS.EXCLUSIONS, []);
+  const loaded = safeGet<string[]>(STORAGE_KEYS.EXCLUSIONS, []);
+  return Array.isArray(loaded) ? loaded : [];
 }
 
 export function saveExclusionsToStorage(exclusions: string[]): void {

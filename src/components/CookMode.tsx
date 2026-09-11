@@ -14,7 +14,8 @@ import {
   Plus,
   Dices,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Calendar
 } from 'lucide-react';
 import { PantryCategory, MatchResult, MealHistoryItem, UserFavoriteMeal, PantryItem, MealCardItem } from '../types';
 import { 
@@ -45,6 +46,8 @@ interface CookModeProps {
   onAddFavorite: (meal: UserFavoriteMeal) => void;
   onDeleteFavorite: (id: string) => void;
   onOpenRecipeModal?: (item: MealCardItem) => void;
+  onNavigateDecide?: () => void;
+  onAddToPlan?: (meal: MealCardItem) => void;
 }
 
 const CATEGORY_TABS: { id: PantryCategory | 'all'; label: string }[] = [
@@ -66,6 +69,8 @@ export const CookMode: React.FC<CookModeProps> = ({
   onAddFavorite,
   onDeleteFavorite,
   onOpenRecipeModal,
+  onNavigateDecide,
+  onAddToPlan,
 }) => {
   const [activeTab, setActiveTab] = useState<PantryCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,11 +104,11 @@ export const CookMode: React.FC<CookModeProps> = ({
   }, [pantry, exclusions, history]);
 
   const readyToCookMatches = useMemo(() => {
-    return matchResults.filter(m => m.matchPercentage === 100);
+    return (matchResults || []).filter(m => m && m.matchPercentage === 100);
   }, [matchResults]);
 
   const almostReadyMatches = useMemo(() => {
-    return matchResults.filter(m => m.matchPercentage >= 70 && m.matchPercentage < 100);
+    return (matchResults || []).filter(m => m && m.matchPercentage >= 70 && m.matchPercentage < 100);
   }, [matchResults]);
 
   const topMatch = matchResults.length > 0 ? matchResults[selectedRecipeIndex] || matchResults[0] : null;
@@ -567,6 +572,47 @@ export const CookMode: React.FC<CookModeProps> = ({
         </div>
       )}
 
+      {/* RESULTS VIEW EMPTY STATE */}
+      {viewState === 'results' && matchResults.length === 0 && (
+        <div className="apple-card p-8 sm:p-12 text-center space-y-4 text-zinc-400">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl">
+            🥘
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base sm:text-lg font-bold text-zinc-800 dark:text-zinc-100">
+              No encontramos platos con lo que tenés
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+              Probá sumando más ingredientes en tu despensa o elegí directamente entre los 20 platos disponibles.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                sound.playClick(750);
+                setViewState('pantry');
+              }}
+              className="px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-xs font-bold cursor-pointer transition-colors"
+            >
+              Ajustar despensa
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick(850);
+                if (onNavigateDecide) {
+                  onNavigateDecide();
+                } else {
+                  onBack();
+                }
+              }}
+              className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs cursor-pointer shadow-md shadow-amber-500/25 transition-colors"
+            >
+              Elegir entre 20 platos
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* RESULTS VIEW WITH DIRECTIONAL SPRING CAROUSEL */}
       {viewState === 'results' && topMatch && (
         <div className="space-y-4">
@@ -794,7 +840,7 @@ export const CookMode: React.FC<CookModeProps> = ({
                 </div>
 
                 {/* Action */}
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
                   {acceptedRecipeId === topMatch.recipe.id ? (
                     <div className="p-3.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-zinc-900 dark:text-zinc-100 font-medium text-xs">
                       Receta confirmada y guardada en tu historial
@@ -808,6 +854,20 @@ export const CookMode: React.FC<CookModeProps> = ({
                     >
                       <Check className="w-4 h-4 stroke-[3]" />
                       <span>Cocinaré esto hoy</span>
+                    </motion.button>
+                  )}
+
+                  {onAddToPlan && (
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => {
+                        sound.playClick(750);
+                        onAddToPlan(matchToMealCard(topMatch));
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-amber-500/25 cursor-pointer transition-colors shadow-2xs"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Agregar al plan semanal</span>
                     </motion.button>
                   )}
                 </div>
@@ -842,8 +902,10 @@ export const CookMode: React.FC<CookModeProps> = ({
           if (onOpenRecipeModal) onOpenRecipeModal(winner);
         }}
         onReroll={() => {
-          const candidates = matchResults.map(matchToMealCard);
-          startRaffleImmediately(candidates);
+          const candidates = (matchResults || []).map(matchToMealCard);
+          if (candidates.length > 0) {
+            startRaffleImmediately(candidates);
+          }
         }}
       />
     </div>

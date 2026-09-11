@@ -14,6 +14,7 @@ import { MealConfirmedModal } from './components/MealConfirmedModal';
 import { RecipeQuickModal } from './components/RecipeQuickModal';
 import { ExclusionsModal } from './components/ExclusionsModal';
 import { FavoritesModal } from './components/FavoritesModal';
+import { AddToPlanModal } from './components/AddToPlanModal';
 import { useAppState } from './hooks/useAppState';
 import { useBodyScrollLock } from './hooks/useBodyScrollLock';
 
@@ -27,15 +28,18 @@ export default function App() {
     history,
     exclusions,
     favorites,
+    weeklyPlan,
     isWelcomeOpen,
     isBlindModeOpen,
     isExclusionsOpen,
     viewingRecipe,
     acceptedMealConfirmation,
+    planModalMeal,
     setActiveTab,
     setIsSidebarOpen,
     setPantry,
     setExclusions,
+    setWeeklyPlan,
     setIsWelcomeOpen,
     setIsBlindModeOpen,
     setIsExclusionsOpen,
@@ -50,6 +54,12 @@ export default function App() {
     handleAddFavorite,
     handleDeleteFavorite,
     handleOpenRecipe,
+    handleOpenAddToPlan,
+    handleCloseAddToPlan,
+    handleAssignMealToPlan,
+    handleClearWeeklyPlan,
+    handleGenerateWeeklyPlan,
+    handleRerollSlot,
   } = useAppState();
 
   // Lock background scroll whenever any modal or drawer is active
@@ -59,6 +69,7 @@ export default function App() {
     isExclusionsOpen ||
     viewingRecipe !== null ||
     acceptedMealConfirmation !== null ||
+    planModalMeal !== null ||
     isSidebarOpen
   );
 
@@ -90,7 +101,7 @@ export default function App() {
       />
 
       {/* Main Tab Content */}
-      <main className={`relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-6 ${activeTab === 'decide' ? 'flex-1 flex flex-col min-h-0 py-1.5 sm:py-2.5 overflow-hidden' : 'py-2.5 sm:py-3.5 flex-1'}`}>
+      <main className={`relative z-10 w-full max-w-4xl mx-auto px-3 sm:px-6 ${activeTab === 'decide' ? 'flex-1 flex flex-col min-h-0 pt-0.5 pb-1 sm:pt-1 sm:pb-2 overflow-hidden' : 'py-2.5 sm:py-3.5 flex-1'}`}>
         <AnimatePresence mode="wait">
           {activeTab === 'decide' && (
             <motion.div
@@ -106,12 +117,15 @@ export default function App() {
                 exclusions={exclusions}
                 history={history}
                 favorites={favorites}
-                onAcceptMeal={handleAcceptMeal}
+                onAcceptMeal={(name, type, emoji, details) => {
+                  handleAcceptMeal(name, type, emoji, details, false);
+                }}
                 onAddFavorite={handleAddFavorite}
                 onDeleteFavorite={handleDeleteFavorite}
                 onOpenRecipeModal={handleOpenRecipe}
                 onOpenBlindMode={() => setIsBlindModeOpen(true)}
                 onNavigatePantry={() => setActiveTab('pantry')}
+                onNavigatePlan={() => setActiveTab('weekly')}
               />
             </motion.div>
           )}
@@ -127,8 +141,15 @@ export default function App() {
               <WeeklyPlanView
                 exclusions={exclusions}
                 history={history}
+                weeklyPlan={weeklyPlan}
+                onUpdatePlan={updated => setWeeklyPlan(updated)}
+                onClearPlan={handleClearWeeklyPlan}
+                onGeneratePlan={handleGenerateWeeklyPlan}
+                onRerollSlot={handleRerollSlot}
                 onAcceptMeal={handleAcceptMeal}
                 onOpenRecipeModal={handleOpenRecipe}
+                onNavigateDecide={() => setActiveTab('decide')}
+                onAddEmptySlot={() => setActiveTab('decide')}
               />
             </motion.div>
           )}
@@ -152,6 +173,8 @@ export default function App() {
                 onAddFavorite={handleAddFavorite}
                 onDeleteFavorite={handleDeleteFavorite}
                 onOpenRecipeModal={handleOpenRecipe}
+                onNavigateDecide={() => setActiveTab('decide')}
+                onAddToPlan={meal => handleOpenAddToPlan(meal)}
               />
             </motion.div>
           )}
@@ -188,6 +211,15 @@ export default function App() {
                 onDeleteHistoryItem={handleDeleteHistoryItem}
                 onClearHistory={handleClearHistory}
                 onRestoreHistoryItem={handleRestoreHistoryItem}
+                onNavigateDecide={() => setActiveTab('decide')}
+                onOpenRecipeModal={item => handleOpenRecipe(item)}
+                onAddToPlan={item => handleOpenAddToPlan({
+                  name: item.name,
+                  type: item.type,
+                  emoji: item.emoji || (item.type === 'cooking' ? '🍳' : '🛵'),
+                  timeEstimate: '25 min',
+                  category: item.type === 'cooking' ? 'Cocina' : 'Delivery'
+                })}
               />
             </motion.div>
           )}
@@ -233,9 +265,11 @@ export default function App() {
         exclusions={exclusions}
         history={history}
         favorites={favorites}
-        onAcceptMeal={handleAcceptMeal}
+        onAcceptMeal={(name, type, emoji, details) => {
+          handleAcceptMeal(name, type, emoji, details, false);
+        }}
         onOpenRecipeModal={(item) => {
-          if (item.recipe) handleOpenRecipe(item.recipe);
+          handleOpenRecipe(item.recipe || item);
         }}
       />
 
@@ -281,6 +315,29 @@ export default function App() {
           setAcceptedMealConfirmation(null);
           setActiveTab('history');
         }}
+        onAddToPlan={() => {
+          if (acceptedMealConfirmation) {
+            const toAdd = { ...acceptedMealConfirmation };
+            setAcceptedMealConfirmation(null);
+            handleOpenAddToPlan({
+              name: toAdd.name,
+              type: toAdd.type,
+              emoji: toAdd.emoji,
+              timeEstimate: '25 min',
+              category: toAdd.type === 'cooking' ? 'Cocina' : 'Delivery'
+            });
+          }
+        }}
+      />
+
+      {/* Add To Weekly Plan Modal */}
+      <AddToPlanModal
+        isOpen={planModalMeal !== null}
+        meal={planModalMeal}
+        weeklyPlan={weeklyPlan}
+        onClose={handleCloseAddToPlan}
+        onConfirmAdd={handleAssignMealToPlan}
+        onNavigatePlan={() => setActiveTab('weekly')}
       />
     </div>
   );

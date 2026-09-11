@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -81,6 +81,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   soundEnabled,
   onToggleSound,
 }) => {
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const handleNav = (tab: AppTab) => {
     sound.playClick(850);
     triggerHaptic('light');
@@ -148,6 +158,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Sidebar Drawer */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú principal de navegación"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
@@ -185,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClose();
                     }}
                     className="p-1 rounded-full text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
-                    title="Cerrar menú"
+                    aria-label="Cerrar menú"
                   >
                     <X className="w-3.5 h-3.5" />
                   </motion.button>

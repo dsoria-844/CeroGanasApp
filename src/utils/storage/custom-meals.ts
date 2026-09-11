@@ -8,10 +8,14 @@ export interface CustomMealsStorage {
 }
 
 export function loadCustomMeals(): CustomMealsStorage {
-  return safeGet<CustomMealsStorage>(STORAGE_KEYS.CUSTOM_MEALS, {
+  const loaded = safeGet<CustomMealsStorage>(STORAGE_KEYS.CUSTOM_MEALS, {
     customDelivery: [],
     customRecipes: [],
   });
+  return {
+    customDelivery: Array.isArray(loaded?.customDelivery) ? loaded.customDelivery : [],
+    customRecipes: Array.isArray(loaded?.customRecipes) ? loaded.customRecipes : [],
+  };
 }
 
 export function saveCustomDeliveryMeal(meal: DeliveryOption): CustomMealsStorage {
@@ -53,15 +57,16 @@ export function saveCustomRecipeMeal(recipe: Recipe): CustomMealsStorage {
 export function deleteCustomMeal(id: string): CustomMealsStorage {
   const current = loadCustomMeals();
   const updated: CustomMealsStorage = {
-    customDelivery: current.customDelivery.filter(d => d.id !== id),
-    customRecipes: current.customRecipes.filter(r => r.id !== id),
+    customDelivery: (current.customDelivery || []).filter(d => d && d.id !== id),
+    customRecipes: (current.customRecipes || []).filter(r => r && r.id !== id),
   };
   safeSet(STORAGE_KEYS.CUSTOM_MEALS, updated);
   return updated;
 }
 
 export function loadDeletedMealIds(): string[] {
-  return safeGet<string[]>(STORAGE_KEYS.DELETED_MEALS, []);
+  const loaded = safeGet<string[]>(STORAGE_KEYS.DELETED_MEALS, []);
+  return Array.isArray(loaded) ? loaded : [];
 }
 
 export function deleteAnyMeal(id: string): void {
@@ -75,23 +80,23 @@ export function deleteAnyMeal(id: string): void {
 
 export function restoreDeletedMeal(id: string): void {
   const deletedIds = loadDeletedMealIds();
-  const updated = deletedIds.filter(deletedId => deletedId !== id);
+  const updated = (deletedIds || []).filter(deletedId => deletedId !== id);
   safeSet(STORAGE_KEYS.DELETED_MEALS, updated);
 }
 
 export function getMergedRecipes(): Recipe[] {
   const custom = loadCustomMeals();
   const deletedIds = loadDeletedMealIds();
-  const activePresets = RECIPES_DATASET.filter(r => !deletedIds.includes(r.id));
-  const activeCustom = custom.customRecipes.filter(r => !deletedIds.includes(r.id));
+  const activePresets = (RECIPES_DATASET || []).filter(r => !deletedIds.includes(r.id));
+  const activeCustom = (custom.customRecipes || []).filter(r => !deletedIds.includes(r.id));
   return [...activeCustom, ...activePresets];
 }
 
 export function getMergedDelivery(): DeliveryOption[] {
   const custom = loadCustomMeals();
   const deletedIds = loadDeletedMealIds();
-  const activePresets = DELIVERY_DATASET.filter(d => !deletedIds.includes(d.id));
-  const activeCustom = custom.customDelivery.filter(d => !deletedIds.includes(d.id));
+  const activePresets = (DELIVERY_DATASET || []).filter(d => !deletedIds.includes(d.id));
+  const activeCustom = (custom.customDelivery || []).filter(d => !deletedIds.includes(d.id));
   return [...activeCustom, ...activePresets];
 }
 

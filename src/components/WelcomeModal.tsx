@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -52,6 +52,16 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
 }) => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleDismiss = () => {
@@ -90,6 +100,9 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
         className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-hidden select-none overscroll-none touch-none"
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-modal-title"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -102,7 +115,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
             whileTap={{ scale: 0.85 }}
             onClick={handleDismiss}
             className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 cursor-pointer transition-colors shadow-2xs z-20"
-            title="Cerrar bienvenida"
+            aria-label="Cerrar bienvenida"
           >
             <X className="w-4 h-4" />
           </motion.button>
@@ -125,23 +138,17 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
             </motion.div>
 
             {/* Heading & Main Question */}
-            <motion.div variants={modalItemVariants} className="space-y-1.5 pt-1">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-bold uppercase tracking-wider">
-                <span>Bienvenido a Cero Ganas</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug">
+            <motion.div variants={modalItemVariants} className="space-y-1 pt-1">
+              <h2 id="welcome-modal-title" className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug">
                 ¿Qué comemos?
               </h2>
-              <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300">
-                Porque <span className="text-zinc-900 dark:text-zinc-100 font-bold">cero ganas</span> de <span className="text-amber-500 font-bold">pensar</span>.
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto pt-1">
-                Tu chef perezoso decide por ti. Elige cómo quieres resolver tu comida hoy:
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
+                Decidí qué comer al instante. Elegí cómo resolver hoy:
               </p>
             </motion.div>
 
             {/* Action Options */}
-            <motion.div variants={modalItemVariants} className="w-full space-y-2 pt-1">
+            <motion.div variants={modalItemVariants} className="w-full space-y-2 pt-0.5">
               {/* Action 1: ¡Tengo Hambre! */}
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }}
@@ -155,10 +162,10 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                   </div>
                   <div className="text-left">
                     <span className="block font-extrabold">¡Tengo Hambre!</span>
-                    <span className="block text-[10px] font-medium text-zinc-900/80">Decisión instantánea en 3s</span>
+                    <span className="block text-[10px] font-medium text-zinc-900/80">El chef decide por vos en 3 segundos</span>
                   </div>
                 </div>
-                <span className="text-[11px] font-bold bg-zinc-950/15 px-2 py-0.5 rounded-full">Rápido ⚡</span>
+                <span className="text-[11px] font-bold bg-zinc-950/15 px-2 py-0.5 rounded-full">3 seg ⚡</span>
               </motion.button>
 
               {/* Action 2: Ver 20 platos */}
@@ -174,7 +181,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                   </div>
                   <div className="text-left">
                     <span className="block font-bold">Elegir entre 20 platos</span>
-                    <span className="block text-[10px] font-medium opacity-70">Navega y haz un sorteo</span>
+                    <span className="block text-[10px] font-medium opacity-70">Mirás 20 opciones y sorteás</span>
                   </div>
                 </div>
                 <span className="text-xs opacity-70 group-hover:translate-x-1 transition-transform">→</span>
@@ -193,7 +200,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                   </div>
                   <div className="text-left">
                     <span className="block font-bold">Despensa Inteligente</span>
-                    <span className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Recetas con lo que tienes</span>
+                    <span className="block text-[10px] font-medium text-zinc-500 dark:text-zinc-400">Cociná con lo que tenés a mano</span>
                   </div>
                 </div>
                 <span className="text-xs text-zinc-400 group-hover:translate-x-1 transition-transform">→</span>

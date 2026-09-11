@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -24,6 +24,16 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
   onUpdateExclusions,
 }) => {
   const [customInput, setCustomInput] = useState('');
+
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -72,8 +82,19 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+      <div 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            sound.playClick(600);
+            onClose();
+          }
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md select-none"
+      >
         <motion.div 
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exclusions-modal-title"
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -88,7 +109,7 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                <h3 id="exclusions-modal-title" className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
                   Alimentos a evitar
                 </h3>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider mt-0.5 font-medium">
@@ -104,6 +125,7 @@ export const ExclusionsModal: React.FC<ExclusionsModalProps> = ({
                 onClose();
               }}
               className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors btn-press cursor-pointer"
+              aria-label="Cerrar exclusiones"
             >
               <X className="w-4 h-4" />
             </button>

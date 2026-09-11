@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Sparkles, History, Check } from 'lucide-react';
+import { X, Sparkles, History, Check, Calendar } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { triggerHaptic, triggerVictoryConfetti } from '../utils/storage';
 
@@ -8,6 +8,7 @@ interface MealConfirmedModalProps {
   isOpen: boolean;
   onClose: () => void;
   onViewHistory: () => void;
+  onAddToPlan?: () => void;
   meal: {
     name: string;
     emoji: string;
@@ -44,6 +45,7 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
   isOpen,
   onClose,
   onViewHistory,
+  onAddToPlan,
   meal,
 }) => {
   useEffect(() => {
@@ -52,6 +54,16 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
       triggerHaptic('success');
     }
   }, [isOpen]);
+
+  // Keyboard Escape listener
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !meal) return null;
 
@@ -68,6 +80,9 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
         style={{ touchAction: 'none', overscrollBehavior: 'none' }}
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="meal-confirmed-title"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -88,7 +103,7 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
               onClose();
             }}
             className="absolute top-4 right-4 p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-white bg-zinc-100 dark:bg-zinc-800 transition-colors cursor-pointer z-10 shadow-2xs"
-            title="Cerrar"
+            aria-label="Cerrar confirmación"
           >
             <X className="w-4 h-4" />
           </motion.button>
@@ -105,7 +120,7 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
                 <Sparkles className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
                 <span>¡Excelente opción elegida!</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
+              <h2 id="meal-confirmed-title" className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight pt-1">
                 ¡A disfrutar de tu comida!
               </h2>
             </motion.div>
@@ -152,18 +167,37 @@ export const MealConfirmedModal: React.FC<MealConfirmedModalProps> = ({
                 <span>¡Entendido, a comer!</span>
               </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  sound.playClick(750);
-                  onViewHistory();
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2 border border-black/[0.06] dark:border-white/[0.06] cursor-pointer transition-colors shadow-2xs"
-              >
-                <History className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Ver en mi historial</span>
-              </motion.button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {onAddToPlan && (
+                  <motion.button
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      sound.playClick(750);
+                      onAddToPlan();
+                    }}
+                    className="w-full py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-amber-500/25 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">Planificar semana</span>
+                  </motion.button>
+                )}
+
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -1 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    sound.playClick(750);
+                    onViewHistory();
+                  }}
+                  className={`w-full py-2.5 px-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-750 text-zinc-700 dark:text-zinc-200 font-semibold text-xs flex items-center justify-center gap-1.5 border border-black/[0.06] dark:border-white/[0.06] cursor-pointer transition-colors shadow-2xs ${
+                    !onAddToPlan ? 'sm:col-span-2' : ''
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span className="truncate">Ver historial</span>
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         </motion.div>
